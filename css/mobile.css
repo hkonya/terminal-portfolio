@@ -22,6 +22,8 @@
     .terminal {
         margin-left: 0;
         width: 100%;
+        min-height: 60vh;
+        max-height: 80vh;
     }
 
     .top-bar {
@@ -42,22 +44,83 @@
     }
 
     .terminal-header {
-        padding: 5px 10px;
+        padding: 5px;
+        grid-template-columns: auto 1fr auto;
+        gap: 5px;
     }
 
-    .header-button {
-        padding: 3px 8px;
-        font-size: 12px;
+    .terminal-controls {
+        display: flex;
+        gap: 2px;
     }
 
     .terminal-title {
-        font-size: 12px;
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 5px;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Compact görünüm için terminal ayarları */
-    .terminal {
-        min-height: 60vh;
-        max-height: 80vh;
+    /* Terminal başlığı için özel stiller */
+    @media (max-width: 480px) {
+        .terminal-title {
+            font-size: 10px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .terminal-title {
+            font-size: 9px;
+        }
+    }
+
+    .header-actions {
+        gap: 2px;
+    }
+
+    .header-button {
+        padding: 2px 4px;
+        font-size: 11px;
+        min-width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .header-button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .header-button i {
+        font-size: 14px;
+        color: #d8d8d8;
+        transition: color 0.2s ease;
+    }
+
+    .header-button:hover i {
+        color: #ffffff;
+    }
+
+    .header-button.close:hover {
+        background-color: rgba(255, 59, 48, 0.2);
+    }
+
+    .header-button.close:hover i {
+        color: #ff3b30;
+    }
+
+    /* Sadece arama ve menü butonlarını gizle */
+    .header-button:not(.minimize):not(.fullscreen):not(.close):not(.new-tab-btn) {
+        display: none;
     }
 
     .terminal-instance {
@@ -70,5 +133,38 @@
 
     .terminal-input {
         font-size: 14px;
+    }
+
+    .terminal-tabs {
+        padding: 0;
+    }
+
+    .terminal-tab {
+        padding: 5px 8px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .terminal-tab-close {
+        font-size: 10px;
+        margin-left: 4px;
+    }
+
+    /* Mobil için fullscreen özel stili */
+    .terminal.fullscreen {
+        position: fixed;
+        top: 30px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: calc(100vh - 30px);
+        max-height: none;
+        margin: 0;
+        z-index: 999;
+    }
+
+    .terminal.fullscreen .terminal-container {
+        height: calc(100vh - 90px);
     }
 } 

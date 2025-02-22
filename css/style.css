@@ -44,7 +44,7 @@ body {
 
 .terminal-header {
     background-color: #272627;
-    padding: 8px 15px;
+    padding: 9px 15px;
     display: grid;
     grid-template-columns: 150px 1fr 150px;
     align-items: center;
@@ -321,7 +321,6 @@ footer {
 .side-bar {
     position: fixed;
     left: 0;
-    top: 30px;
     width: 60px;
     height: calc(100vh - 30px);
     background-color: rgba(26, 27, 38, 0.3);
@@ -418,7 +417,59 @@ footer {
     font-size: 12px;
 }
 
-/* Terminal satırları için stiller */
+@media (max-width: 768px) {
+    .social-links, .email-link {
+        display: none;
+    }
+    
+    .top-bar {
+        padding: 0 10px;
+        font-size: 12px;
+    }
+    
+    .top-bar-center {
+        display: none;
+    }
+    
+    .top-nav {
+        position: static;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .terminal {
+        min-height: 70vh;
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .terminal-text {
+        font-size: 2em;
+    }
+    
+    .terminal-content {
+        padding: 15px;
+    }
+    
+    .side-bar {
+        transform: translateX(-100%);
+    }
+
+    .side-bar.show {
+        transform: translateX(0);
+    }
+
+    .terminal.with-sidebar {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+    }
+
+    .app-icon img {
+        width: 25px;
+        height: 25px;
+    }
+}
+
 .terminal-line {
     margin: 2px 0;
     white-space: pre-wrap;

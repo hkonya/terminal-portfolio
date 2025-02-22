@@ -6,6 +6,63 @@ document.addEventListener('DOMContentLoaded', () => {
     // Terminal'i başlat
     Terminal.init();
     
+    // Terminal başlığını mobil için optimize et
+    function updateTerminalTitle() {
+        const terminalTitle = document.querySelector('.terminal-title');
+        if (!terminalTitle) return;
+
+        const fullTitle = terminalTitle.textContent;
+        const parts = fullTitle.split(':');
+        
+        if (parts.length === 2) {
+            const userHost = parts[0].trim(); // guest@hasankonya
+            let path = parts[1].trim(); // ~/portfolio gibi
+
+            // Mobil görünümde
+            if (window.innerWidth <= 768) {
+                // Başlığın genişliğini kontrol et
+                const tempSpan = document.createElement('span');
+                tempSpan.style.visibility = 'hidden';
+                tempSpan.style.fontSize = '11px'; // Mobil font boyutu
+                tempSpan.textContent = fullTitle;
+                document.body.appendChild(tempSpan);
+                
+                const titleWidth = tempSpan.offsetWidth;
+                document.body.removeChild(tempSpan);
+
+                // Mevcut container genişliğini al
+                const containerWidth = terminalTitle.offsetWidth;
+
+                // Eğer tam başlık sığmıyorsa kısalt
+                if (titleWidth > containerWidth) {
+                    // Path'i kısalt
+                    if (path.length > 10) {
+                        const pathParts = path.split('/');
+                        if (pathParts.length > 2) {
+                            path = '.../' + pathParts[pathParts.length - 1];
+                        }
+                    }
+                    
+                    // Kullanıcı adını kısalt
+                    const [user, host] = userHost.split('@');
+                    const shortTitle = `${user}@${host.split('.')[0]}: ${path}`;
+                    
+                    terminalTitle.textContent = shortTitle;
+                } else {
+                    // Tam başlık sığıyorsa onu göster
+                    terminalTitle.textContent = fullTitle;
+                }
+            } else {
+                // Masaüstünde tam başlık
+                terminalTitle.textContent = fullTitle;
+            }
+        }
+    }
+
+    // Sayfa yüklendiğinde ve ekran boyutu değiştiğinde başlığı güncelle
+    updateTerminalTitle();
+    window.addEventListener('resize', updateTerminalTitle);
+    
     // Side bar kontrolü
     const sideBar = document.querySelector('.side-bar');
     const sidebarToggle = document.querySelector('.sidebar-toggle');
@@ -584,15 +641,22 @@ document.addEventListener('DOMContentLoaded', () => {
         fullscreenBtn.addEventListener('click', () => {
             const terminal = document.querySelector('.terminal');
             const icon = fullscreenBtn.querySelector('i');
+            const isMobile = window.innerWidth <= 768;
 
             if (!terminal.classList.contains('fullscreen')) {
                 // Tam ekrana geç
                 terminal.classList.add('fullscreen');
-                icon.className = 'far fa-compress-arrows-alt';
+                icon.className = 'ph ph-corners-in';
+                
+                // Mobilde sidebar'ı kapat
+                if (isMobile) {
+                    const sideBar = document.querySelector('.side-bar');
+                    sideBar.classList.remove('show');
+                }
             } else {
                 // Tam ekrandan çık
                 terminal.classList.remove('fullscreen');
-                icon.className = 'far fa-square';
+                icon.className = 'ph ph-corners-out';
             }
         });
     }
