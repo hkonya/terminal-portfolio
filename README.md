@@ -1,7 +1,7 @@
 # Terminal Portfolio
 
 <p align="center">
-  <img src="preview.jpg" alt="Terminal Portfolio Preview" width="100%">
+  <img src="./files/preview.jpg" alt="Terminal Portfolio Preview" width="100%">
 </p>
 
 A modern, interactive terminal-style portfolio website built with JavaScript. Features command-line interface, custom animations, and real-time interactions. Includes social media integration, project showcase, and professional experience display.
