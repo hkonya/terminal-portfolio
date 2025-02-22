@@ -6,6 +6,65 @@ document.addEventListener('DOMContentLoaded', () => {
     // Terminal'i başlat
     Terminal.init();
     
+    // Side bar kontrolü
+    const sideBar = document.querySelector('.side-bar');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const terminal = document.querySelector('.terminal');
+    let sidebarTimeout;
+
+    function toggleSidebar() {
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            // Eğer sidebar zaten açıksa ve yeni bir tıklama geldiyse
+            if (sideBar.classList.contains('show')) {
+                clearTimeout(sidebarTimeout);
+                sideBar.classList.remove('show');
+            } else {
+                // Sidebar'ı aç ve 5 saniye sonra kapat
+                sideBar.classList.add('show');
+                clearTimeout(sidebarTimeout);
+                sidebarTimeout = setTimeout(() => {
+                    sideBar.classList.remove('show');
+                }, 5000); // 5 saniye
+            }
+        } else {
+            sideBar.classList.toggle('hidden');
+            terminal.classList.toggle('with-sidebar');
+        }
+    }
+
+    // Ekran boyutu değiştiğinde kontrol
+    window.addEventListener('resize', () => {
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) {
+            sideBar.classList.remove('show');
+            sideBar.classList.remove('hidden');
+            terminal.classList.add('with-sidebar');
+        } else {
+            terminal.classList.remove('with-sidebar');
+            sideBar.classList.remove('show');
+        }
+    });
+
+    // Sidebar toggle olayı
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+
+    // Sayfa yüklendiğinde kontrol
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        // Mobilde sidebar'ı göster ve 5 saniye sonra kapat
+        sideBar.classList.add('show');
+        sidebarTimeout = setTimeout(() => {
+            sideBar.classList.remove('show');
+        }, 5000); // 5 saniye
+    } else {
+        // Masaüstünde terminal'e sidebar margin'i ekle
+        terminal.classList.add('with-sidebar');
+    }
+    
     // Saat ve tarih güncelleme fonksiyonu
     function updateDateTime() {
         const now = new Date();
@@ -539,36 +598,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Terminal ikonuna tıklama olayı ekle
-    const terminalIcon = document.querySelector('.app-icon');
-    if (terminalIcon) {
+    const terminalAppIcon = document.querySelector('.app-icon');
+    if (terminalAppIcon) {
         // İlk yüklemede notification dot'u ekle
         let notificationDot = document.createElement('div');
         notificationDot.className = 'notification-dot';
-        terminalIcon.appendChild(notificationDot);
+        terminalAppIcon.appendChild(notificationDot);
 
-        terminalIcon.addEventListener('click', () => {
+        terminalAppIcon.addEventListener('click', () => {
             const terminal = document.querySelector('.terminal');
             
-            if (terminalIcon.classList.contains('minimized')) {
+            if (terminalAppIcon.classList.contains('minimized')) {
                 // Terminal'i geri getir
                 terminal.classList.remove('minimized');
                 terminal.style.display = 'flex';
                 
                 // Terminal ikonunun minimized sınıfını kaldır ve active ekle
-                terminalIcon.classList.remove('minimized');
-                terminalIcon.classList.add('active');
+                terminalAppIcon.classList.remove('minimized');
+                terminalAppIcon.classList.add('active');
                 
                 // Input'u focusla
                 const activeInput = document.querySelector('.terminal-instance.active .terminal-input');
                 if (activeInput) activeInput.focus();
-            } else if (!terminalIcon.classList.contains('active')) {
+            } else if (!terminalAppIcon.classList.contains('active')) {
                 // Terminal kapalıysa yeni bir terminal başlat
                 terminal.classList.remove('minimized');
                 terminal.style.display = 'flex';
-                terminalIcon.classList.add('active');
+                terminalAppIcon.classList.add('active');
                 
                 // Notification dot'u kaldır
-                const notificationDot = terminalIcon.querySelector('.notification-dot');
+                const notificationDot = terminalAppIcon.querySelector('.notification-dot');
                 if (notificationDot) {
                     notificationDot.remove();
                 }
@@ -618,7 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Terminal sürükleme işlevselliği
-    const terminal = document.querySelector('.terminal');
     const terminalHeader = document.querySelector('.terminal-header');
     let isDragging = false;
     let currentX;

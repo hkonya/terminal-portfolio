@@ -333,6 +333,22 @@ footer {
     padding: 10px 0;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     z-index: 999;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Sidebar gizleme sınıfı */
+.side-bar.hidden {
+    transform: translateX(-100%);
+}
+
+/* Sidebar toggle ikonu */
+.sidebar-toggle {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    color: #d13d01;
 }
 
 .app-icons {
@@ -402,49 +418,7 @@ footer {
     font-size: 12px;
 }
 
-@media (max-width: 768px) {
-    .social-links, .email-link {
-        display: none;
-    }
-    
-    .top-bar {
-        padding: 0 10px;
-        font-size: 12px;
-    }
-    
-    .top-bar-center {
-        display: none;
-    }
-    
-    .top-nav {
-        position: static;
-        justify-content: center;
-        margin-bottom: 20px;
-    }
-    
-    .terminal {
-        min-height: 70vh;
-        margin-left: 50px;
-    }
-    
-    .terminal-text {
-        font-size: 2em;
-    }
-    
-    .terminal-content {
-        padding: 15px;
-    }
-    
-    .side-bar {
-        width: 50px;
-    }
-
-    .app-icon img {
-        width: 25px;
-        height: 25px;
-    }
-}
-
+/* Terminal satırları için stiller */
 .terminal-line {
     margin: 2px 0;
     white-space: pre-wrap;

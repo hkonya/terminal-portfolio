@@ -1,0 +1,74 @@
+/* Mobil cihazlar için özel stiller */
+@media (max-width: 768px) {
+    .side-bar {
+        width: 45px;
+        transform: translateX(-45px);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .side-bar.show {
+        transform: translateX(0);
+    }
+
+    .app-icon {
+        height: 35px;
+    }
+
+    .app-icon img {
+        width: 22px;
+        height: 22px;
+    }
+
+    .terminal {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .top-bar {
+        padding: 0 10px;
+        font-size: 12px;
+    }
+
+    .top-bar-center {
+        display: none;
+    }
+
+    .top-bar-left {
+        width: auto;
+    }
+
+    .terminal-content {
+        padding: 10px;
+    }
+
+    .terminal-header {
+        padding: 5px 10px;
+    }
+
+    .header-button {
+        padding: 3px 8px;
+        font-size: 12px;
+    }
+
+    .terminal-title {
+        font-size: 12px;
+    }
+
+    /* Compact görünüm için terminal ayarları */
+    .terminal {
+        min-height: 60vh;
+        max-height: 80vh;
+    }
+
+    .terminal-instance {
+        font-size: 14px;
+    }
+
+    .terminal-prompt {
+        padding: 8px 15px;
+    }
+
+    .terminal-input {
+        font-size: 14px;
+    }
+} 
