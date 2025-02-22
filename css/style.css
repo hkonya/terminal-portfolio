@@ -1,0 +1,968 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Fira Code', monospace;
+}
+
+body {
+    background-color: #0a192f;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #64ffda;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.terminal {
+    background-color: #020c1b;
+    width: 100%;
+    max-width: 1400px;
+    min-height: 85vh;
+    max-height: 85vh;
+    border-radius: 0;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: fixed;
+    margin-left: 60px;
+    display: flex;
+    flex-direction: column;
+    cursor: default;
+    user-select: none;
+    transition: transform 0.1s ease;
+}
+
+.terminal-header {
+    background-color: #272627;
+    padding: 8px 15px;
+    display: grid;
+    grid-template-columns: 150px 1fr 150px;
+    align-items: center;
+    border-radius: 0;
+    position: relative;
+    cursor: move;
+}
+
+.terminal-title {
+    color: #d8d8d8;
+    font-size: 14px;
+    grid-column: 2;
+    text-align: center;
+    font-weight: 500;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    grid-column: 3;
+}
+
+.header-button {
+    background-color: #3f3f3f;
+    color: #d8d8d8;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.header-button i {
+    font-size: 14px;
+}
+
+.header-button:hover {
+    background-color: #4f4f4f;
+}
+
+.terminal-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.control-group {
+    display: flex;
+    gap: 8px;
+}
+
+.control {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.control:hover {
+    filter: brightness(0.9);
+}
+
+.terminal-content {
+    padding: 20px;
+    line-height: 1.6;
+    height: calc(100% - 40px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 60px;
+}
+
+.terminal-text {
+    color: #ff79c6;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.ascii-banner {
+    color: #ff79c6;
+    font-family: monospace;
+    white-space: pre;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.terminal-description {
+    color: #8be9fd;
+    margin-bottom: 20px;
+}
+
+.terminal-navigation {
+    margin-bottom: 20px;
+}
+
+.highlight {
+    color: #ff79c6;
+    font-weight: 600;
+}
+
+.terminal-instructions {
+    margin-bottom: 20px;
+}
+
+.commands {
+    margin-left: 20px;
+}
+
+.number {
+    color: #bd93f9;
+}
+
+.command {
+    color: #f1fa8c;
+    font-weight: 500;
+}
+
+.terminal-prompt {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #020c1b;
+    padding: 10px 20px;
+    width: 100%;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prompt {
+    color: #50fa7b;
+    margin-right: 8px;
+    white-space: nowrap;
+}
+
+.input-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    height: 24px;
+}
+
+.terminal-input {
+    background: transparent;
+    border: none;
+    color: #f8f8f2;
+    font-size: 16px;
+    outline: none;
+    width: 100%;
+    position: relative;
+    caret-color: #fff;
+    padding: 0;
+    margin: 0;
+    line-height: 24px;
+}
+
+.terminal-input span.command {
+    color: #d13d01;
+}
+
+.terminal-input span.rest {
+    color: #f8f8f2;
+}
+
+.terminal-input-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    color: #f8f8f2;
+}
+
+.terminal-input.command-highlight {
+    color: #d13d01;
+}
+
+.cursor {
+    position: absolute;
+    width: 10px;
+    height: 20px;
+    background: #fff;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.terminal-input::selection {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+footer {
+    margin-top: 20px;
+    color: #6272a4;
+    font-size: 14px;
+}
+
+/* Üst Bar */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: #1a1b26;
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.top-bar-left, .top-bar-center, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.top-bar-left i {
+    color: #d13d01;
+    font-size: 16px;
+}
+
+.top-bar-right {
+    gap: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.top-bar-right i {
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.top-bar-right:hover i {
+    color: #d13d01;
+}
+
+.time {
+    font-weight: 500;
+}
+
+/* Sol Uygulama Barı */
+.side-bar {
+    position: fixed;
+    left: 0;
+    top: 30px;
+    width: 60px;
+    height: calc(100vh - 30px);
+    background-color: rgba(26, 27, 38, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.app-icons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.app-icon {
+    width: 100%;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.app-icon img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.app-icon:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.app-icon:hover img {
+    transform: scale(1.1);
+}
+
+.app-icon.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.app-icon.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background-color: #d13d01;
+}
+
+.new-tab-button {
+    background-color: transparent;
+    border: none;
+    color: #d8d8d8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    margin-left: 15px;
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+.new-tab-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.new-tab-button i {
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .social-links, .email-link {
+        display: none;
+    }
+    
+    .top-bar {
+        padding: 0 10px;
+        font-size: 12px;
+    }
+    
+    .top-bar-center {
+        display: none;
+    }
+    
+    .top-nav {
+        position: static;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .terminal {
+        min-height: 70vh;
+        margin-left: 50px;
+    }
+    
+    .terminal-text {
+        font-size: 2em;
+    }
+    
+    .terminal-content {
+        padding: 15px;
+    }
+    
+    .side-bar {
+        width: 50px;
+    }
+
+    .app-icon img {
+        width: 25px;
+        height: 25px;
+    }
+}
+
+.terminal-line {
+    margin: 2px 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.terminal-line a {
+    color: #64ffda;
+    text-decoration: none;
+}
+
+.terminal-line a:hover {
+    text-decoration: underline;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 50px;
+    right: 40px;
+    display: flex;
+    gap: 30px;
+}
+
+/* Terminal sekmeleri için stiller */
+.terminal-tabs {
+    display: none;
+    background-color: #333233;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    border-radius: 0;
+}
+
+.terminal-tabs.show {
+    display: flex;
+}
+
+.terminal-tab {
+    padding: 8px 15px;
+    color: #d8d8d8;
+    cursor: pointer;
+    border-right: 1px solid #3f3f3f;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terminal-tab.active {
+    background-color: #020c1b;
+}
+
+.terminal-tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.terminal-tab-close {
+    margin-left: 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.terminal-tab-close:hover {
+    opacity: 1;
+}
+
+/* Terminal içeriği için stiller */
+.terminal-container {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-instance {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    overflow: hidden;
+}
+
+.terminal-instance.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar-center {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.top-bar-center:hover {
+    color: #d13d01;
+}
+
+.datetime-popup {
+    animation: fadeIn 0.001s ease;
+    background-color: #fafbfa;
+    display: flex;
+    gap: 20px;
+    min-width: 600px !important;
+    padding: 20px !important;
+}
+
+.datetime-popup-left {
+    flex: 1;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    padding-right: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.datetime-popup-right {
+    flex: 1;
+    padding-left: 20px;
+}
+
+.datetime-popup-header {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.datetime-popup-header .date {
+    font-size: 24px;
+    font-weight: 500;
+}
+
+.datetime-popup-header .day {
+    font-size: 16px;
+    color: #666;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.calendar-header div {
+    color: #666;
+    font-size: 14px;
+    padding: 5px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day {
+    text-align: center;
+    padding: 0;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background-color: rgba(209, 61, 1, 0.1);
+}
+
+.calendar-day.active {
+    background-color: #d13d01;
+    color: white;
+    font-weight: 500;
+}
+
+.calendar-day.today:not(.active) {
+    color: #d13d01;
+    font-weight: 500;
+}
+
+.calendar-day.today:not(.active)::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #d13d01;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+    pointer-events: none;
+}
+
+.notification-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification-icon {
+    font-size: 48px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.notification-text {
+    color: #666;
+    text-align: center;
+    font-size: 14px;
+}
+
+.notification-button {
+    background-color: #f5f5f5;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+.notification-button:hover {
+    background-color: #eee;
+}
+
+.month-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.month-navigation button {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s ease;
+}
+
+.month-navigation button:hover {
+    color: #d13d01;
+}
+
+.month-navigation .current-month {
+    font-weight: 500;
+    color: #333;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) translateX(-50%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) translateX(-50%);
+    }
+}
+
+.system-popup {
+    animation: fadeIn 0.001s ease;
+    background-color: #fafbfa;
+    min-width: 400px !important;
+    padding: 20px !important;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    z-index: 1000;
+}
+
+.system-popup-header {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.system-popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.system-volume-slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 5px;
+}
+
+.system-volume-slider i {
+    color: #666;
+    font-size: 16px;
+    transition: color 0.2s ease;
+}
+
+.system-volume-slider input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: linear-gradient(to right, #d13d01 75%, #e6e7e6 75%);
+    border-radius: 2px;
+    outline: none;
+    transition: background 0.2s ease;
+}
+
+.system-volume-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #d13d01;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.system-volume-slider input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.system-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.system-button {
+    background-color: #e6e7e6;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.system-button:hover {
+    background-color: rgba(209, 61, 1, 0.1);
+}
+
+.system-button i {
+    color: #666;
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.system-button.active {
+    background-color: #d13d01;
+    color: white;
+}
+
+.system-button.active i {
+    color: white;
+}
+
+.system-divider {
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin: 15px 0;
+}
+
+.app-icon .notification-dot {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 8px;
+    height: 8px;
+    background-color: #d13d01;
+    border-radius: 50%;
+    display: block;
+}
+
+.app-icon.active .notification-dot {
+    display: none;
+}
+
+.terminal.minimized {
+    display: none !important;
+}
+
+/* Terminal Yazı Efekti */
+.top-bar-left span {
+    display: inline-block;
+    position: relative;
+    color: #f8f8f2;
+    font-size: 16px;
+    font-family: 'Fira Code', monospace;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 2px solid #d13d01;
+    width: 11ch;
+    animation: 
+        typewriter 14s steps(11) infinite,
+        blinker 750ms steps(1) infinite;
+}
+
+@keyframes typewriter {
+    0%, 100% {
+        width: 0;
+    }
+    10%, 40% {
+        width: 11ch;
+    }
+    50%, 90% {
+        width: 0;
+    }
+}
+
+@keyframes blinker {
+    50% {
+        border-color: transparent;
+    }
+}
+
+/* Terminal Komut Tamamlama Stilleri */
+.completions {
+    padding: 5px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: 'Fira Code', monospace;
+}
+
+.completions span {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s ease;
+}
+
+.completions span:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+}
+
+.suggestion {
+    padding: 5px 0;
+    font-family: 'Fira Code', monospace;
+    opacity: 0.8;
+}
+
+/* Dosya tiplerine göre renkler */
+.completions .directory {
+    color: #f1c40f !important;
+}
+
+.completions .file {
+    color: #ffffff !important;
+}
+
+.completions .executable {
+    color: #2ecc71 !important;
+}
+
+/* Komut tamamlama önerileri için animasyon */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.completions, .suggestion {
+    animation: fadeIn 0.2s ease;
+}
+
+/* Terminal tam ekran stili */
+.terminal.fullscreen {
+    position: fixed;
+    top: 30px;
+    left: 60px;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    z-index: 999;
+    cursor: default;
+    transform: none !important;
+}
+
+.terminal.fullscreen .terminal-container {
+    height: calc(100vh - 90px); /* top-bar ve terminal-header yüksekliğini çıkar */
+    max-height: none;
+}

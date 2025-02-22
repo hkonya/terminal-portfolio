@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Portfolio</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Üst Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <i class="fas fa-terminal"></i>
+            <span data-text="Hasan Konya">Hasan Konya</span>
+        </div>
+        <div class="top-bar-center">
+        </div>
+        <div class="top-bar-right">
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-volume-up"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <!-- Sol Uygulama Barı -->
+    <div class="side-bar">
+        <div class="app-icons">
+            <a href="#" class="app-icon active">
+                <img src="img/terminal.png" alt="Terminal">
+            </a>
+            <a href="https://github.com/hkonya" target="_blank" class="app-icon">
+                <img src="img/github.png" alt="GitHub">
+            </a>
+            <a href="https://linkedin.com/in/hasankny" target="_blank" class="app-icon">
+                <img src="img/linkedin.png" alt="LinkedIn">
+            </a>
+            <a href="https://dev.to/hkonya" target="_blank" class="app-icon">
+                <img src="img/dev.png" alt="Dev.to">
+            </a>
+            <a href="https://medium.com/@hasankny" target="_blank" class="app-icon">
+                <img src="img/medium.png" alt="Medium">
+            </a>
+            <a href="https://www.instagram.com/hasankny/" target="_blank" class="app-icon">
+                <img src="img/instagram.png" alt="Instagram">
+            </a>
+        </div>
+    </div>
+
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-controls">
+                <button class="header-button new-tab-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="terminal-title">guest@hasankonya: ~</div>
+            <div class="header-actions">
+                <button class="header-button">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="header-button">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="header-button minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="header-button fullscreen">
+                    <i class="far fa-square"></i>
+                </button>
+                <button class="header-button close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="terminal-tabs">
+            <div class="terminal-tab active">
+                guest@hasankonya:~/portfolio$ <i class="fas fa-times terminal-tab-close"></i>
+            </div>
+        </div>
+        <div class="terminal-container">
+            <div class="terminal-instance active">
+                <div class="terminal-content">
+ 
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        
+    </footer>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
