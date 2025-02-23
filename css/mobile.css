@@ -32,7 +32,12 @@
     }
 
     .top-bar-center {
-        display: none;
+        display: block;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        white-space: nowrap;
     }
 
     .top-bar-left {
@@ -248,5 +253,24 @@
 
     .terminal.fullscreen .terminal-container {
         height: calc(100vh - 90px);
+    }
+
+    /* Mobil için masaüstü ikonları */
+    .desktop-icons {
+        top: 35px;
+        left: 10px;
+    }
+
+    .desktop-icon {
+        width: 80px;
+    }
+
+    .icon-wrapper {
+        width: 48px;
+        height: 48px;
+    }
+
+    .icon-label {
+        font-size: 10px;
     }
 } 

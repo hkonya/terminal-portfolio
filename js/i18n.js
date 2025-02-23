@@ -1,48 +1,51 @@
 import { tr } from '../locales/tr.js';
 import { en } from '../locales/en.js';
 
-class I18n {
-    constructor() {
-        this.translations = {
-            tr,
-            en
-        };
-        this.currentLocale = localStorage.getItem('locale') || 'en';
-        console.log(this.currentLocale);
-        this.setLocale(this.currentLocale);
-    }
-
+export const i18n = {
+    currentLocale: 'tr',
+    translations: {
+        tr: {
+            ...tr,
+            dialog: {
+                folderName: 'Klasör adı',
+                fileName: 'Dosya adı',
+                newFolder: 'Yeni Klasör',
+                newTextFile: 'Yeni Metin Belgesi.txt',
+                ok: 'Tamam',
+                cancel: 'İptal'
+            }
+        },
+        en: {
+            ...en,
+            dialog: {
+                folderName: 'Folder name',
+                fileName: 'File name',
+                newFolder: 'New Folder',
+                newTextFile: 'New Text Document.txt',
+                ok: 'OK',
+                cancel: 'Cancel'
+            }
+        }
+    },
+    getCurrentLocale() {
+        return this.currentLocale;
+    },
     setLocale(locale) {
         if (this.translations[locale]) {
             this.currentLocale = locale;
-            localStorage.setItem('locale', locale);
-            document.documentElement.lang = locale;
-            this.updatePageContent();
-            return true;
         }
-        return false;
-    }
-
+    },
     t(key) {
         const keys = key.split('.');
-        let value = this.translations[this.currentLocale];
+        let translation = this.translations[this.currentLocale];
         
         for (const k of keys) {
-            if (value && value[k]) {
-                value = value[k];
-            } else {
-                console.warn(`Translation key not found: ${key}`);
-                return key;
-            }
+            translation = translation[k];
+            if (!translation) break;
         }
         
-        return value;
-    }
-
-    getCurrentLocale() {
-        return this.currentLocale;
-    }
-
+        return translation || key;
+    },
     updatePageContent() {
         // Üst bar güncellemeleri
         document.querySelector('.top-bar-left span').textContent = this.t('topBar.title');
@@ -73,8 +76,7 @@ class I18n {
 
         // Tarih formatını güncelle
         this.updateDateTime();
-    }
-
+    },
     updateSystemButtons() {
         const systemButtons = document.querySelectorAll('.system-button');
         systemButtons.forEach(button => {
@@ -99,8 +101,7 @@ class I18n {
                     break;
             }
         });
-    }
-
+    },
     updateTerminalContent() {
         const terminalContent = document.querySelector('.terminal-content');
         if (terminalContent) {
@@ -121,8 +122,7 @@ class I18n {
                 }
             });
         }
-    }
-
+    },
     updatePopups() {
         // Datetime popup güncelleme
         const datetimePopup = document.querySelector('.datetime-popup');
@@ -199,8 +199,7 @@ class I18n {
                 }
             });
         }
-    }
-
+    },
     updateDateTime() {
         const dateTimeElement = document.querySelector('.top-bar-center');
         if (dateTimeElement) {
@@ -215,6 +214,4 @@ class I18n {
             dateTimeElement.textContent = now.toLocaleString(this.currentLocale === 'tr' ? 'tr-TR' : 'en-US', options);
         }
     }
-}
-
-export const i18n = new I18n(); 
+}; 
