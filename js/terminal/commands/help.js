@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function help(params, targetContent, addOutput) {
+export function help(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const helpText = `
 <span class="highlight">${i18n.t('commandDescriptions.help')}</span>
 
@@ -38,5 +38,5 @@ ${i18n.t('tips.title')}:
 • ${i18n.t('tips.ls')}
 • ${i18n.t('tips.neofetch')}
 `;
-    addOutput(helpText, targetContent);
+    utils.addOutput(helpText, targetContent);
 } 

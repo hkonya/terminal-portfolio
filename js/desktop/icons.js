@@ -1,5 +1,6 @@
 import { WindowManager } from '../window/WindowManager.js';
 import { i18n } from '../i18n.js';
+import { fileSystem } from '../FileSystem.js';
 
 export class DesktopIcon {
     constructor() {
@@ -19,7 +20,6 @@ export class DesktopIcon {
         this.iconGrid = new Map();
         this.contextMenu = null;
         this.desktopContextMenu = null;
-        this.filesystem = this.loadFilesystem();
 
         // Grid ayarları
         this.GRID_SIZE = 100;
@@ -27,117 +27,228 @@ export class DesktopIcon {
         this.MARGIN_TOP = 40;
         this.ICONS_PER_COLUMN = Math.floor((window.innerHeight - this.MARGIN_TOP) / this.GRID_SIZE);
 
-        this.init();
+        // Async init'i başlat
+        (async () => {
+            await this.init();
+        })();
     }
 
-    loadFilesystem() {
-        const fs = localStorage.getItem('filesystem');
-        if (fs) {
-            return JSON.parse(fs);
-        }
-        // Filesystem yapısını oluştur
-        return {
-            desktop: {
-                path: '/desktop',
-                type: 'folder',
-                name: 'Desktop',
-                children: {},
-                created: new Date().toISOString(),
-                modified: new Date().toISOString()
+    async loadFilesystem() {
+        const desktopPath = '/home/guest/Masaüstü';
+        let desktopNode = fileSystem.traversePath(desktopPath);
+        
+        // Eğer Masaüstü dizini bulunamazsa, FileSystem'in oluşturulmasını bekle ve tekrar dene
+        if (!desktopNode) {
+            console.log('Masaüstü dizini bulunamadı, FileSystem oluşturulması bekleniyor...');
+            
+            // FileSystem'in hazır olmasını bekle
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Masaüstü dizinini oluştur
+            try {
+                fileSystem.createDirectory(desktopPath);
+                desktopNode = fileSystem.traversePath(desktopPath);
+            } catch (error) {
+                console.error('Masaüstü dizini oluşturulurken hata:', error);
             }
-        };
-    }
-
-    saveFilesystem() {
-        localStorage.setItem('filesystem', JSON.stringify(this.filesystem));
+            
+            if (!desktopNode) {
+                console.error('Masaüstü dizini bulunamadı!');
+                return null;
+            }
+        }
+        
+        return desktopNode;
     }
 
     createFileSystemEntry(name, type, x, y) {
-        const now = new Date().toISOString();
-        const entry = {
-            name: name,
-            type: type,
-            path: `/desktop/${name}`,
-            created: now,
-            modified: now,
-            position: { x, y }
-        };
-
-        if (type === 'folder') {
-            entry.children = {};
-        } else {
-            entry.size = 0; // Varsayılan dosya boyutu
+        const desktopPath = '/home/guest/Masaüstü';
+        const fullPath = `${desktopPath}/${name}`;
+        
+        try {
+            let node = null;
+            
+            if (type === 'folder') {
+                fileSystem.createDirectory(fullPath);
+                node = fileSystem.traversePath(fullPath);
+                if (node) {
+                    node.metadata = {
+                        created: new Date().toISOString(),
+                        accessed: new Date().toISOString(),
+                        lastModified: new Date().toISOString(),
+                        isHidden: false,
+                        itemCount: 0,
+                        directories: 0,
+                        files: 0,
+                        path: fullPath,
+                        position: { x, y }
+                    };
+                }
+            } else {
+                fileSystem.createFile(fullPath, '', '-rw-r--r--');
+                node = fileSystem.traversePath(fullPath);
+                if (node) {
+                    const ext = name.split('.').pop() || '';
+                    node.metadata = {
+                        created: new Date().toISOString(),
+                        accessed: new Date().toISOString(),
+                        lastModified: new Date().toISOString(),
+                        isHidden: false,
+                        path: fullPath,
+                        position: { x, y },
+                        extension: ext,
+                        fileType: this.getFileType(name),
+                        description: this.getFileDescription(name),
+                        icon: this.getFileIcon(name),
+                        mimeType: this.getMimeType(name),
+                        version: '1.0',
+                        isReadOnly: false,
+                        isSystem: false,
+                        checksum: Math.random().toString(16).substr(2, 7)
+                    };
+                }
+            }
+            
+            // Node oluşturulduysa, LocalStorage'a kaydet
+            if (node) {
+                // Positions Map'i güncelle
+                this.positions.set(name, { x, y });
+                
+                // FileSystem'i LocalStorage'a kaydet
+                fileSystem.saveFileSystem();
+                
+                console.log(`Yeni ${type === 'folder' ? 'klasör' : 'dosya'} oluşturuldu:`, {
+                    name: name,
+                    position: { x, y },
+                    path: fullPath
+                });
+            }
+            
+            return node;
+        } catch (error) {
+            console.error('Dosya sistemi girişi oluşturulurken hata:', error);
+            return null;
         }
-
-        this.filesystem.desktop.children[name] = entry;
-        this.filesystem.desktop.modified = now;
-        this.saveFilesystem();
-        return entry;
     }
 
     deleteFileSystemEntry(name) {
-        if (this.filesystem.desktop.children[name]) {
-            delete this.filesystem.desktop.children[name];
-            this.filesystem.desktop.modified = new Date().toISOString();
-            this.saveFilesystem();
+        const desktopPath = '/home/guest/Masaüstü';
+        const fullPath = `${desktopPath}/${name}`;
+        try {
+            fileSystem.deleteItem(fullPath);
+        } catch (error) {
+            console.error('Dosya sistemi girişi silinirken hata:', error);
         }
     }
 
-    renameFileSystemEntry(oldName, newName) {
-        const entry = this.filesystem.desktop.children[oldName];
-        if (entry) {
-            entry.name = newName;
-            entry.path = `/desktop/${newName}`;
-            entry.modified = new Date().toISOString();
-            this.filesystem.desktop.children[newName] = entry;
-            delete this.filesystem.desktop.children[oldName];
-            this.filesystem.desktop.modified = new Date().toISOString();
-            this.saveFilesystem();
-        }
-    }
-
-    updateFileSystemEntryPosition(name, x, y) {
-        const entry = this.filesystem.desktop.children[name];
-        if (entry) {
-            entry.position = { x, y };
-            entry.modified = new Date().toISOString();
-            this.saveFilesystem();
-        }
-    }
-
-    init() {
-        // Filesystem'i yükle
-        this.filesystem = this.loadFilesystem();
-
-        // CV dosyasını kontrol et ve yoksa ekle
-        if (!this.filesystem.desktop.children['CV.pdf']) {
-            const defaultPos = this.calculateNewIconPosition();
-            this.createFileSystemEntry('CV.pdf', 'file', defaultPos.x, defaultPos.y);
-            this.createIconElement('file', 'CV.pdf', defaultPos.x, defaultPos.y);
-        }
-
-        // Mevcut dosya sisteminden ikonları yükle
-        this.loadIconsFromFilesystem();
-        this.setupEventListeners();
-        this.initializeGrid();
+    renameFileSystemEntry(oldName, newName, force = false) {
+        const desktopPath = '/home/guest/Masaüstü';
+        const oldPath = `${desktopPath}/${oldName}`;
+        const newPath = `${desktopPath}/${newName}`;
         
-        // Mevcut menüleri kontrol et ve temizle
-        const existingContextMenus = document.querySelectorAll('.context-menu');
-        existingContextMenus.forEach(menu => menu.remove());
+        try {
+            const node = fileSystem.traversePath(oldPath);
+            if (!node) {
+                console.error('Yeniden adlandırılacak dosya bulunamadı:', oldPath);
+                return false;
+            }
+            
+            // Eğer hedef konumda dosya varsa ve force parametresi true değilse işlemi iptal et
+            const existingTarget = fileSystem.traversePath(newPath);
+            if (existingTarget && !force) {
+                console.error('Hedef konumda dosya zaten var:', newPath);
+                return false;
+            }
+            
+            // Eğer hedef konumda dosya varsa ve force parametresi true ise, önce hedefi sil
+            if (existingTarget && force) {
+                fileSystem.deleteItem(newPath);
+            }
+            
+            // Yeni dosya/dizin oluştur
+            if (node.type === 'directory') {
+                fileSystem.createDirectory(newPath);
+            } else {
+                fileSystem.createFile(newPath, node.content || '', node.permissions);
+            }
+            
+            // Eski dosya/dizini sil
+            fileSystem.deleteItem(oldPath);
+            
+            // Metadata'yı güncelle
+            const newNode = fileSystem.traversePath(newPath);
+            if (newNode) {
+                newNode.metadata = {
+                    ...node.metadata,
+                    path: newPath,
+                    accessed: new Date()
+                };
+            }
+            
+            // İkon konumunu güncelle
+            this.saveIconPositions();
+            
+            return true;
+        } catch (error) {
+            console.error('Dosya sistemi girişi yeniden adlandırılırken hata:', error);
+            return false;
+        }
+    }
+
+    updateFileSystemEntryPosition(path, position) {
+        try {
+            // Sadece dosya adını kullan
+            const fileName = path.split('/').pop();
+            const success = fileSystem.updateNodePosition(fileName, position);
+            if (success) {
+                // Positions Map'i güncelle
+                this.positions.set(fileName, position);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error(`Dosya konumu güncellenirken hata oluştu: ${path}`, error);
+            return false;
+        }
     }
 
     loadIconsFromFilesystem() {
-        // Önce mevcut ikonları temizle
+        const desktopPath = '/home/guest/Masaüstü';
+        const desktop = fileSystem.traversePath(desktopPath);
+        
+        if (!desktop || !desktop.children) {
+            console.error('Masaüstü içeriği yüklenemedi!');
+            return;
+        }
+        
+        // Masaüstü içeriğini temizle
         const desktopIcons = document.querySelector('.desktop-icons');
         desktopIcons.innerHTML = '';
-
-        // Filesystem'den ikonları yükle
-        Object.values(this.filesystem.desktop.children).forEach(entry => {
-            this.createIconElement(entry.type, entry.name, entry.position.x, entry.position.y);
+        
+        // Positions Map'i sıfırla
+        this.positions = new Map();
+        
+        // Masaüstündeki tüm dosya ve klasörleri işle
+        Object.keys(desktop.children).forEach(key => {
+            const item = desktop.children[key];
+            const position = item.metadata && item.metadata.position ? item.metadata.position : this.calculateNewIconPosition();
+            const x = position.x;
+            const y = position.y;
+            
+            // Dosya türüne göre ikon oluştur
+            const type = item.type === 'directory' ? 'folder' : 'file';
+            const icon = this.createIconElement(type, item.name, x, y);
+            
+            // Positions Map'e ekle
+            this.positions.set(item.name, { x, y });
+            
+            console.log(`Yüklenen öğe: ${item.name}, konum: (${x}, ${y}), tür: ${type}`);
         });
-
-        // İkonları güncelle
+        
+        // İkonlar listesini güncelle
         this.icons = document.querySelectorAll('.desktop-icon');
+        
+        console.log('Masaüstü içeriği yüklendi, toplam öğe sayısı:', this.icons.length);
     }
 
     createIconElement(type, name, x, y) {
@@ -175,19 +286,21 @@ export class DesktopIcon {
         const desktopIcons = document.querySelector('.desktop-icons');
         desktopIcons.appendChild(newIcon);
 
-        this.setupIconEventListeners(newIcon);
-
         // İkonu konumlandır
         newIcon.style.left = `${x}px`;
         newIcon.style.top = `${y}px`;
 
-        // Filesystem'e ekle veya güncelle
-        if (!this.filesystem.desktop.children[name]) {
-            this.createFileSystemEntry(name, type, x, y);
-        }
+        // Event listener'ları ekle
+        this.setupIconEventListeners(newIcon);
 
+        // İkonları güncelle
         this.icons = document.querySelectorAll('.desktop-icon');
         this.selectedIcon = newIcon;
+
+        // Filesystem'de pozisyonu güncelle
+        this.updateFileSystemEntryPosition(name, { x, y });
+
+        return newIcon;
     }
 
     deleteIcon(icon) {
@@ -202,6 +315,86 @@ export class DesktopIcon {
         // Seçili ikonu sıfırla
         if (this.selectedIcon === icon) {
             this.selectedIcon = null;
+        }
+    }
+
+    // Onay diyaloğu göster
+    showConfirmDialog(title, message, confirmText, cancelText, callback) {
+        // Önceki modal varsa kaldır
+        const existingModal = document.querySelector('.confirm-dialog-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Tema ayarlarını al
+        const config = JSON.parse(localStorage.getItem('config')) || { darkTheme: false };
+        const isDarkTheme = config.darkTheme;
+        
+        // Modal oluştur
+        const modal = document.createElement('div');
+        modal.className = 'name-dialog-modal confirm-dialog-modal';
+        if (isDarkTheme) {
+            modal.classList.add('dark-theme');
+        }
+        
+        modal.innerHTML = `
+            <div class="name-dialog-content">
+                <div class="name-dialog-header">
+                    <h3>${title}</h3>
+                    <button class="name-dialog-close">&times;</button>
+                </div>
+                <div class="name-dialog-body">
+                    <div class="confirm-message">
+                        ${message}
+                    </div>
+                </div>
+                <div class="name-dialog-footer">
+                    <button class="name-action-btn cancel-btn">${cancelText || 'İptal'}</button>
+                    <button class="name-action-btn confirm-btn">${confirmText || 'Tamam'}</button>
+                </div>
+            </div>
+        `;
+        
+        // Modalı ekle
+        document.body.appendChild(modal);
+        
+        // Kapatma düğmesi olayı
+        const closeBtn = modal.querySelector('.name-dialog-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+                callback(false);
+            });
+        }
+        
+        // ESC tuşuna basıldığında modal'ı kapat
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleKeyDown);
+                callback(false);
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        
+        // İptal butonu olayı
+        const cancelBtn = modal.querySelector('.cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+                document.removeEventListener('keydown', handleKeyDown);
+                callback(false);
+            });
+        }
+        
+        // Onay butonu olayı
+        const confirmBtn = modal.querySelector('.confirm-btn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                modal.remove();
+                document.removeEventListener('keydown', handleKeyDown);
+                callback(true);
+            });
         }
     }
 
@@ -222,9 +415,35 @@ export class DesktopIcon {
             label.contentEditable = false;
             const newName = label.textContent.trim();
             
-            if (newName && newName !== oldName && !this.filesystem.desktop.children[newName]) {
-                // Filesystem'de güncelle
-                this.renameFileSystemEntry(oldName, newName);
+            if (newName && newName !== oldName) {
+                const desktopPath = '/home/guest/Masaüstü';
+                const newFullPath = `${desktopPath}/${newName}`;
+                const existingFile = fileSystem.traversePath(newFullPath);
+                
+                if (!existingFile) {
+                    // Filesystem'de güncelle
+                    this.renameFileSystemEntry(oldName, newName);
+                } else {
+                    // Yeniden adlandırma işleminde hata - aynı isimde dosya var
+                    label.textContent = oldName;
+                    
+                    // Onay penceresini göster
+                    this.showConfirmDialog(
+                        'Dosya Zaten Var',
+                        `"${newName}" isimli bir dosya veya klasör zaten var. Üzerine yazmak istiyor musunuz?`,
+                        'Üzerine Yaz',
+                        'İptal',
+                        (confirmed) => {
+                            if (confirmed) {
+                                // Kullanıcı onay verdi, üzerine yaz
+                                this.renameFileSystemEntry(oldName, newName, true);
+                            } else {
+                                // İptal edildi, eski ismi koru
+                                label.textContent = oldName;
+                            }
+                        }
+                    );
+                }
             } else {
                 label.textContent = oldName;
             }
@@ -243,6 +462,38 @@ export class DesktopIcon {
         label.addEventListener('blur', saveRename);
     }
 
+    showProperties(icon) {
+        const label = icon.querySelector('.icon-label').textContent;
+        const desktopPath = '/home/guest/Masaüstü';
+        const fullPath = `${desktopPath}/${label}`;
+        const entry = fileSystem.traversePath(fullPath);
+        
+        if (entry) {
+            const created = new Date(entry.metadata?.created).toLocaleString();
+            const accessed = new Date(entry.metadata?.accessed).toLocaleString();
+            const modified = new Date(entry.lastModified).toLocaleString();
+            const position = entry.metadata?.position || { x: 0, y: 0 };
+            
+            alert(`Özellikler:
+Dosya Adı: ${entry.name}
+Konum: ${entry.metadata?.path || fullPath}
+Tür: ${entry.type === 'directory' ? 'Klasör' : 'Dosya'}
+İzinler: ${entry.permissions}
+Sahibi: ${entry.owner}
+Grup: ${entry.group}
+Boyut: ${entry.size}
+Oluşturulma: ${created}
+Son Erişim: ${accessed}
+Değiştirilme: ${modified}
+Konum (x,y): ${position.x}, ${position.y}
+${entry.type === 'directory' ? 
+    `Alt Dizinler: ${entry.metadata?.directories || 0}
+Alt Dosyalar: ${entry.metadata?.files || 0}` : 
+    `Dosya Tipi: ${entry.metadata?.fileType || 'Bilinmiyor'}
+Açıklama: ${entry.metadata?.description || ''}`}`);
+        }
+    }
+
     handleMouseUp() {
         if (!this.isDragging || !this.draggedIcon) return;
         
@@ -250,37 +501,31 @@ export class DesktopIcon {
         this.draggedIcon.style.cursor = '';
         
         if (this.hasMovedBeyondThreshold) {
+            // Sürükleme efektlerini kaldır
             this.draggedIcon.classList.remove('dragging');
             this.draggedIcon.style.transform = '';
             this.draggedIcon.style.transition = '';
             this.draggedIcon.style.zIndex = '';
             
-            const label = this.draggedIcon.querySelector('.icon-label').textContent;
+            // Yeni pozisyonu al
+            const x = parseInt(this.draggedIcon.style.left);
+            const y = parseInt(this.draggedIcon.style.top);
+            
+            // Positions Map'i güncelle
+            this.positions.set(this.draggedIcon.querySelector('.icon-label').textContent, { x, y });
+            
             // Filesystem'de pozisyonu güncelle
-            this.updateFileSystemEntryPosition(label, this.currentPos.x, this.currentPos.y);
+            this.updateFileSystemEntryPosition(this.draggedIcon.querySelector('.icon-label').textContent, { x, y });
+            
+            // Tüm pozisyonları kaydet
+            this.saveIconPositions();
+            
+            console.log(`İkon pozisyonu güncellendi: ${this.draggedIcon.querySelector('.icon-label').textContent} (${x}, ${y})`);
         }
         
         this.isDragging = false;
         this.draggedIcon = null;
         this.hasMovedBeyondThreshold = false;
-    }
-
-    showProperties(icon) {
-        const label = icon.querySelector('.icon-label').textContent;
-        const entry = this.filesystem.desktop.children[label];
-        
-        if (entry) {
-            const created = new Date(entry.created).toLocaleString();
-            const modified = new Date(entry.modified).toLocaleString();
-            
-            alert(`Özellikler:
-Dosya Adı: ${entry.name}
-Konum: ${entry.path}
-Tür: ${entry.type === 'folder' ? 'Klasör' : 'Dosya'}
-Oluşturulma: ${created}
-Değiştirilme: ${modified}
-${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
-        }
     }
 
     initializeGrid() {
@@ -305,25 +550,35 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
     }
 
     loadIconPositions() {
-        const savedPositions = localStorage.getItem('iconPositions');
-        if (savedPositions) {
-            this.positions = new Map(JSON.parse(savedPositions));
-            this.applyIconPositions();
-        }
+        const desktopPath = '/home/guest/Masaüstü';
+        const desktop = fileSystem.traversePath(desktopPath);
+        
+        if (!desktop || !desktop.children) return;
+
+        Object.entries(desktop.children).forEach(([name, entry]) => {
+            const position = entry.metadata?.position;
+            if (position) {
+                const icon = Array.from(this.icons).find(icon => 
+                    icon.querySelector('.icon-label').textContent === name
+                );
+                if (icon) {
+                    icon.style.left = `${position.x}px`;
+                    icon.style.top = `${position.y}px`;
+                }
+            }
+        });
     }
 
     saveIconPositions() {
-        // Pozisyonları kaydet
-        localStorage.setItem('iconPositions', 
-            JSON.stringify(Array.from(this.positions.entries())));
-    }
-
-    applyIconPositions() {
         this.icons.forEach(icon => {
-            const pos = this.positions.get(icon.querySelector('.icon-label').textContent);
-            if (pos) {
-                icon.style.left = `${pos.x}px`;
-                icon.style.top = `${pos.y}px`;
+            const label = icon.querySelector('.icon-label').textContent;
+            const x = parseInt(icon.style.left);
+            const y = parseInt(icon.style.top);
+            
+            // Her ikon için pozisyon güncelle
+            if (this.updateFileSystemEntryPosition(label, { x, y })) {
+                // Positions Map'i güncelle
+                this.positions.set(label, { x, y });
             }
         });
     }
@@ -558,7 +813,19 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
             case 'new-folder':
                 this.hideDesktopContextMenu();
                 this.showNameDialog('folder', (name) => {
-                    this.createIconElement('folder', name, clickX, clickY);
+                    // Önce FileSystem'e kaydet
+                    const node = this.createFileSystemEntry(name, 'folder', clickX, clickY);
+                    if (node) {
+                        // Sonra ikon oluştur
+                        const icon = this.createIconElement('folder', name, clickX, clickY);
+                        console.log('Yeni klasör oluşturuldu:', {
+                            name: name,
+                            position: { x: clickX, y: clickY },
+                            node: node
+                        });
+                    } else {
+                        console.error('Klasör oluşturulamadı:', name);
+                    }
                 });
                 break;
             case 'paste':
@@ -615,7 +882,7 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
                     this.positions.set(label, { x, y });
                     
                     // Filesystem'de pozisyonu güncelle
-                    this.updateFileSystemEntryPosition(label, x, y);
+                    this.updateFileSystemEntryPosition(label, { x, y });
                 });
 
                 this.saveIconPositions();
@@ -650,7 +917,7 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
                     this.positions.set(label, { x, y });
                     
                     // Filesystem'de pozisyonu güncelle
-                    this.updateFileSystemEntryPosition(label, x, y);
+                    this.updateFileSystemEntryPosition(label, { x, y });
                 });
 
                 this.saveIconPositions();
@@ -1098,7 +1365,7 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
             
             // Bu ikonu seç
             icon.classList.add('selected');
-            this.selectedIcon = icon;
+         this.selectedIcon = icon;
         }
     }
 
@@ -1147,24 +1414,30 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
             document.body.style.cursor = 'grabbing';
             this.draggedIcon.style.cursor = 'grabbing';
 
-            // Cursor pozisyonundan offset'i çıkararak merkezi cursor'a getir
-            const newX = e.clientX - this.offset.x - (this.draggedIcon.offsetWidth / 2);
-            const newY = e.clientY - this.offset.y - (this.draggedIcon.offsetHeight / 2);
+            // Grid'e göre en yakın pozisyonu hesapla
+            const gridX = Math.round((e.clientX - this.offset.x - (this.draggedIcon.offsetWidth / 2)) / this.GRID_SIZE) * this.GRID_SIZE;
+            const gridY = Math.round((e.clientY - this.offset.y - (this.draggedIcon.offsetHeight / 2)) / this.GRID_SIZE) * this.GRID_SIZE;
 
             // Sınır kontrolleri
-            const rightBoundary = window.innerWidth - 70;
-            const leftBoundary = 70;
-            const topBoundary = 70;
-            const bottomBoundary = window.innerHeight - 70;
+            const rightBoundary = window.innerWidth - this.MARGIN_RIGHT;
+            const leftBoundary = this.MARGIN_RIGHT;
+            const topBoundary = this.MARGIN_TOP;
+            const bottomBoundary = window.innerHeight - this.MARGIN_TOP;
             
-            this.currentPos.x = Math.max(leftBoundary, Math.min(newX, rightBoundary - this.draggedIcon.offsetWidth));
-            this.currentPos.y = Math.max(topBoundary, Math.min(newY, bottomBoundary - this.draggedIcon.offsetHeight));
+            // Grid'e göre ayarlanmış pozisyonları sınırlar içinde tut
+            this.currentPos.x = Math.max(leftBoundary, Math.min(gridX + this.MARGIN_RIGHT, rightBoundary - this.draggedIcon.offsetWidth));
+            this.currentPos.y = Math.max(topBoundary, Math.min(gridY + this.MARGIN_TOP, bottomBoundary - this.draggedIcon.offsetHeight));
 
             this.mousePos.x = e.clientX;
             this.mousePos.y = e.clientY;
 
+            // İkonu yeni pozisyona taşı
             this.draggedIcon.style.left = `${this.currentPos.x}px`;
             this.draggedIcon.style.top = `${this.currentPos.y}px`;
+
+            // FileSystem'i anlık olarak güncelle
+            const label = this.draggedIcon.querySelector('.icon-label').textContent;
+            this.updateFileSystemEntryPosition(label, this.currentPos.x, this.currentPos.y);
         }
     }
 
@@ -1446,17 +1719,16 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
 
     // Grid sistemine göre ikonları düzenle
     arrangeIcons() {
+        const desktopPath = '/home/guest/Masaüstü';
         this.icons.forEach((icon, index) => {
             const gridPos = this.calculateGridPosition(index);
             icon.style.left = `${gridPos.x}px`;
             icon.style.top = `${gridPos.y}px`;
             
-            // Pozisyonları kaydet
+            // Filesystem'de pozisyonu güncelle
             const label = icon.querySelector('.icon-label').textContent;
-            this.positions.set(label, gridPos);
+            this.updateFileSystemEntryPosition(label, gridPos);
         });
-        
-        this.saveIconPositions();
     }
 
     handleContextMenu(e, icon) {
@@ -1498,6 +1770,101 @@ ${entry.type === 'file' ? `Boyut: ${entry.size} bytes` : ''}`);
         }
         
         return newName;
+    }
+
+    getFileType(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        const typeMap = {
+            'pdf': 'document',
+            'txt': 'text',
+            'jpg': 'image',
+            'jpeg': 'image',
+            'png': 'image',
+            'gif': 'image'
+        };
+        return typeMap[ext] || 'unknown';
+    }
+
+    getFileDescription(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        const descMap = {
+            'pdf': 'PDF Dökümanı',
+            'txt': 'Metin Dosyası',
+            'jpg': 'JPEG Resim Dosyası',
+            'jpeg': 'JPEG Resim Dosyası',
+            'png': 'PNG Resim Dosyası',
+            'gif': 'GIF Animasyon Dosyası'
+        };
+        return descMap[ext] || 'Bilinmeyen Dosya Türü';
+    }
+
+    getFileIcon(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        const iconMap = {
+            'pdf': 'pdf_file.png',
+            'txt': 'text_file.png',
+            'jpg': 'image_file.png',
+            'jpeg': 'image_file.png',
+            'png': 'image_file.png',
+            'gif': 'image_file.png'
+        };
+        return iconMap[ext] || 'unknown_file.png';
+    }
+
+    getMimeType(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        const mimeMap = {
+            'pdf': 'application/pdf',
+            'txt': 'text/plain',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif'
+        };
+        return mimeMap[ext] || 'application/octet-stream';
+    }
+
+    async init() {
+        // Masaüstü içeriğini yükle
+        let desktop = await this.loadFilesystem();
+        
+        // Eğer ilk denemede başarısız olduysa, kısa bir bekleme sonrası tekrar dene
+        if (!desktop) {
+            console.log('Masaüstü yüklenemedi, tekrar deneniyor...');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            desktop = await this.loadFilesystem();
+                
+            if (!desktop) {
+                console.error('Masaüstü dizini yüklenemedi!');
+                return;
+            }
+        }
+        
+        // Başarılı yükleme sonrası devam et
+        this.initializeAfterDesktopLoad(desktop);
+    }
+
+    // Yeni yardımcı metod
+    initializeAfterDesktopLoad(desktop) {
+        // Mevcut dosya sisteminden ikonları yükle
+        this.loadIconsFromFilesystem();
+
+        // CV dosyasını kontrol et ve yoksa ekle
+        const cvPath = '/home/guest/Masaüstü/CV.pdf';
+        const cvFile = fileSystem.traversePath(cvPath);
+        if (!cvFile) {
+            const defaultPos = this.calculateNewIconPosition();
+            this.createFileSystemEntry('CV.pdf', 'file', defaultPos.x, defaultPos.y);
+            this.createIconElement('file', 'CV.pdf', defaultPos.x, defaultPos.y);
+        }
+
+        this.setupEventListeners();
+        this.initializeGrid();
+        this.loadIconPositions(); // İkon pozisyonlarını yükle
+        
+        // Mevcut menüleri kontrol et ve temizle
+        const existingContextMenus = document.querySelectorAll('.context-menu');
+        existingContextMenus.forEach(menu => menu.remove());
     }
 }
 

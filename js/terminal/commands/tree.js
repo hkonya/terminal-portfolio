@@ -1,21 +1,26 @@
-export function tree(params, targetContent, addOutput) {
-    const tree = `
-📁 terminal-portfolio/
-├── 📁 css/
-│   └── 📄 style.css
-├── 📁 js/
-│   └── 📄 main.js
-├── 📁 img/
-│   ├── 📄 terminal.png
-│   ├── 📄 github.png
-│   ├── 📄 linkedin.png
-│   ├── 📄 dev.png
-│   ├── 📄 medium.png
-│   └── 📄 instagram.png
-├── 📄 index.html
-└── 📄 README.md
+import { fileSystem } from '../../FileSystem.js';
 
-3 directories, 9 files
-`;
-    addOutput(tree, targetContent);
+export function tree(params, targetContent, commandHistory, currentPath, setPath, utils) {
+    try {
+        // Varsayılan olarak geçerli dizinden başla
+        const path = params[0] || currentPath;
+        
+        // Dizini kontrol et
+        const dirContents = fileSystem.getContents(path);
+        if (!dirContents) throw new Error(`'${path}' dizini bulunamadı.`);
+        
+        // Ağaç görünümünü oluştur
+        let tree = path;
+        
+        // Dosya ve dizinleri listele
+        Object.keys(dirContents).forEach(key => {
+            tree += `\n├── ${key}`;
+        });
+        
+        // Çıktıyı göster
+        utils.addOutput(tree, targetContent);
+    } catch (error) {
+        console.error('Tree komutu hatası:', error);
+        utils.addOutput(`tree: ${error.message}`, targetContent, 'error');
+    }
 } 

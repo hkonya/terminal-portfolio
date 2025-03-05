@@ -5,6 +5,7 @@ import { DesktopIcon } from './desktop/icons.js';
 import { WindowManager } from './window/WindowManager.js';
 import { FileManager } from './apps/FileManager.js';
 import { TrashManager } from './apps/TrashManager.js';
+import { checkAndInitializeFileSystem } from './FileSystemInitializer.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Terminal'i başlat
@@ -706,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Terminal.terminalData.set(tabId, {
                     commandHistory: [],
                     historyIndex: -1,
-                    currentPath: '/home/guest/portfolio'
+                    currentPath: '/home/guest'
                 });
                 
                 const terminalTabs = document.querySelector('.terminal-tabs');
@@ -802,4 +803,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const trashManager = new TrashManager(windowManager);
         trashManager.open();
     });
+
+    // Uygulama başlangıcında FileSystem'i kontrol et ve başlat
+    const isNewFileSystem = checkAndInitializeFileSystem();
+    if (isNewFileSystem) {
+        console.log('Yeni dosya sistemi oluşturuldu ve başlatıldı.');
+    }
 });

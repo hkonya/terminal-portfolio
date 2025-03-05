@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function date(params, targetContent, addOutput) {
+export function date(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const now = new Date();
-    addOutput(now.toLocaleString(i18n.getCurrentLocale() === 'tr' ? 'tr-TR' : 'en-US'), targetContent);
+    utils.addOutput(now.toLocaleString(i18n.getCurrentLocale() === 'tr' ? 'tr-TR' : 'en-US'), targetContent);
 } 

@@ -1,4 +1,6 @@
-export function neofetch(params, targetContent, addOutput) {
+import { i18n } from '../../i18n.js';
+
+export function neofetch(params, targetContent, commandHistory, currentPath, setPath, utils) {
     // Site açılış tarihi
     const siteStartDate = new Date('2025-02-08T20:00:00');
     const now = new Date();
@@ -35,5 +37,5 @@ export function neofetch(params, targetContent, addOutput) {
 <span style="color: #C01C28">        \`:+ssssssssssssssssss+:\`</span>
 <span style="color: #C01C28">            .-/+oossssoo+/-.</span>               <span style="background-color: #171421">   </span><span style="background-color: #C01C28">   </span><span style="background-color: #26A269">   </span><span style="background-color: #A2734C">   </span><span style="background-color: #12488B">   </span><span style="background-color: #A347BA">   </span><span style="background-color: #2AA1B3">   </span><span style="background-color: #D0CFCC">   </span>
                                           <span style="background-color: #5E5C64">   </span><span style="background-color: #F66151">   </span><span style="background-color: #33DA7A">   </span><span style="background-color: #E9AD0C">   </span><span style="background-color: #2A7BDE">   </span><span style="background-color: #C061CB">   </span><span style="background-color: #33C7DE">   </span><span style="background-color: #FFFFFF">   </span>`;
-    addOutput(logo, targetContent);
+    utils.addOutput(logo, targetContent);
 } 

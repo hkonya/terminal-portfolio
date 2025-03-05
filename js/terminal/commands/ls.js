@@ -1,153 +1,230 @@
-// Dosya sistemi yapısı
-const fileSystem = {
-    '/home/guest': {
-        'portfolio': { type: 'directory', size: '320B', modified: '9 Şub 00:24', permissions: 'drwxr-xr-x' }
-    },
-    '/home/guest/portfolio': {
-        'css': { type: 'directory', size: '96B', modified: '8 Şub 17:52', permissions: 'drwxr-xr-x' },
-        'js': { type: 'directory', size: '96B', modified: '8 Şub 17:52', permissions: 'drwxr-xr-x' },
-        'img': { type: 'directory', size: '320B', modified: '9 Şub 00:24', permissions: 'drwxr-xr-x' },
-        'index.html': { type: 'file', size: '5.5K', modified: '9 Şub 00:06', permissions: '-rw-r--r--' },
-        'README.md': { type: 'file', size: '0B', modified: '8 Şub 17:53', permissions: '-rw-r--r--' }
-    },
-    '/home/guest/portfolio/css': {
-        'style.css': { type: 'file', size: '14K', modified: '9 Şub 00:35', permissions: '-rw-r--r--' }
-    },
-    '/home/guest/portfolio/js': {
-        'main.js': { type: 'file', size: '63K', modified: '9 Şub 00:35', permissions: '-rw-r--r--' }
-    },
-    '/home/guest/portfolio/img': {
-        'terminal.png': { type: 'file', size: '7.9K', modified: '8 Şub 18:39', permissions: '-rw-r--r--' },
-        'github.png': { type: 'file', size: '18K', modified: '8 Şub 18:40', permissions: '-rw-r--r--' },
-        'linkedin.png': { type: 'file', size: '11K', modified: '8 Şub 18:41', permissions: '-rw-r--r--' },
-        'dev.png': { type: 'file', size: '9.0K', modified: '8 Şub 18:41', permissions: '-rw-r--r--' },
-        'medium.png': { type: 'file', size: '14K', modified: '8 Şub 18:43', permissions: '-rw-r--r--' },
-        'instagram.png': { type: 'file', size: '52K', modified: '8 Şub 18:40', permissions: '-rw-r--r--' },
-        'bg.png': { type: 'file', size: '6.1M', modified: '9 Şub 00:23', permissions: '-rw-r--r--' },
-        'bg_dark.png': { type: 'file', size: '4.6M', modified: '9 Şub 00:23', permissions: '-rw-r--r--' }
-    }
-};
+// Gerçek FileSystem'i import et
+import { fileSystem } from '../../FileSystem.js';
 
-function formatEntry(name, info, isDirectory = false, showDetails = false, showHumanReadable = false) {
-    if (showDetails) {
-        const size = showHumanReadable ? info.size : info.size.replace(/[KMG]/, '000');
-        return `${info.permissions} 1 hkonya admin ${size.padStart(8)} ${info.modified} ${isDirectory ? `<span style="color: #f1c40f">${name}/</span>` : `<span style="color: #f8f8f2">${name}</span>`}`;
-    }
-    return isDirectory ? `<span style="color: #f1c40f">${name}/</span>` : `<span style="color: #f8f8f2">${name}</span>`;
-}
-
-function listDirectory(path, content, showDetails = false, showHumanReadable = false, level = 0) {
-    let result = '';
-    if (level > 0) {
-        result += `\n\n${path}:`;
-    }
-
-    const dirs = [];
-    const fils = [];
-
-    // Özel dizinleri ekle
-    if (path !== '/' && !showDetails) {
-        dirs.push('.');
-        dirs.push('..');
-    }
-
-    // Dosya ve dizinleri ayır
-    for (const [name, info] of Object.entries(content)) {
-        if (info.type === 'directory') {
-            dirs.push(name);
-        } else {
-            fils.push(name);
-        }
-    }
-
-    // Sırala ve formatla
-    const entries = [];
-    [...dirs.sort(), ...fils.sort()].forEach(name => {
-        if (name === '.' || name === '..') {
-            entries.push(`<span style="color: #f1c40f">${name}</span>`);
-        } else {
-            const info = content[name];
-            entries.push(formatEntry(name, info, info.type === 'directory', showDetails, showHumanReadable));
-        }
-    });
-
-    result += '\n' + entries.join('\n');
-
-    return result;
-}
-
-export function ls(params = [], targetContent, currentPath, { addOutput, updateCursorPosition }) {
-    // Parametreleri analiz et
-    const showDetails = params.includes('-l') || params.includes('-lh');
-    const showHumanReadable = params.includes('-h') || params.includes('-lh');
-    const showRecursive = params.includes('-R');
-
-    // Hedef dizini belirle
-    let targetPath = currentPath;
-    const nonOptionParams = params.filter(p => !p.startsWith('-'));
+// Boyut formatı için yardımcı fonksiyon
+function formatSize(size, humanReadable = false) {
+    if (!size) return '0B';
     
-    if (nonOptionParams.length > 0) {
-        const dirParam = nonOptionParams[0];
+    // Eğer zaten formatlı geliyorsa (örn: 4.0K) doğrudan döndür
+    if (typeof size === 'string' && size.match(/^[\d\.]+[BKMGT]?$/)) {
+        // NaN değerini kontrol et
+        if (size.includes('NaN')) return '0B';
+        return size;
+    }
+    
+    // Eğer sayı değilse, 0 olarak kabul et
+    const numericSize = parseInt(size);
+    if (isNaN(numericSize)) return '0B';
+    
+    if (!humanReadable) return `${numericSize}`;
+    
+    if (numericSize < 1024) return numericSize + 'B';
+    if (numericSize < 1024 * 1024) return (numericSize / 1024).toFixed(1) + 'K';
+    if (numericSize < 1024 * 1024 * 1024) return (numericSize / (1024 * 1024)).toFixed(1) + 'M';
+    return (numericSize / (1024 * 1024 * 1024)).toFixed(1) + 'G';
+}
+
+// Tarih formatı
+function formatDate(date) {
+    try {
+        if (!date) return '-';
+        if (typeof date === 'string') {
+            date = new Date(date);
+        }
+        if (isNaN(date.getTime())) return '-';
         
-        // Tam yol verilmişse
-        if (dirParam.startsWith('/')) {
-            targetPath = dirParam;
+        const now = new Date();
+        const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+        
+        // Aynı yıl içindeyse ay, gün, saat göster
+        if (date.getFullYear() === now.getFullYear()) {
+            const month = monthNames[date.getMonth()];
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${day} ${month} ${hours}:${minutes}`;
+        } else {
+            // Farklı yıl ise ay, gün, yıl göster
+            const month = monthNames[date.getMonth()];
+            const day = date.getDate().toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
         }
-        // Göreceli yol verilmişse
-        else {
-            // ".." için üst dizine git
-            if (dirParam === '..') {
-                targetPath = currentPath.split('/').slice(0, -1).join('/') || '/';
-            }
-            // "." için mevcut dizinde kal
-            else if (dirParam === '.') {
-                targetPath = currentPath;
-            }
-            // Normal dizin adı verilmişse
-            else {
-                targetPath = `${currentPath}/${dirParam}`;
-            }
-        }
+    } catch (error) {
+        console.error('Tarih formatlanırken hata:', error);
+        return '-';
     }
+}
 
-    const currentDirContent = fileSystem[targetPath];
-    
-    if (!currentDirContent) {
-        addOutput(`ls: '${targetPath}': Böyle bir dizin yok`, targetContent);
-        // Input'u temizle
-        const input = targetContent.querySelector('.terminal-input');
-        if (input) {
-            input.value = '';
-            input.style.color = '#f8f8f2';
-            const cursor = targetContent.querySelector('.cursor');
-            if (cursor) updateCursorPosition(input, cursor);
+function formatEntry(name, item, showDetails = false) {
+    try {
+        // Detaylı görünüm için
+        if (showDetails) {
+            const isDir = item.type === 'directory';
+            const permissions = item.permissions || (isDir ? 'drwxr-xr-x' : '-rw-r--r--');
+            const owner = item.owner || 'hkonya';
+            const group = item.group || 'staff';
+            
+            // Boyutu doğru formatta al
+            const size = formatSize(item.size, true);
+            
+            // Son değiştirilme tarihini formatlı olarak al
+            const date = formatDate(item.lastModified);
+            
+            // Dosya ve klasörleri farklı renklerde göster
+            const colorClass = isDir ? 'directory-color' : 'file-color';
+            const nameWithClass = `<span class="${colorClass}">${name}${isDir ? '/' : ''}</span>`;
+            
+            return `${permissions} ${owner} ${group} ${size.padStart(8)} ${date} ${nameWithClass}`;
+        } else {
+            // Basit görünüm için
+            const isDir = item.type === 'directory';
+            // Dosya ve klasörleri farklı renklerde göster
+            const colorClass = isDir ? 'directory-color' : 'file-color';
+            return `<span class="${colorClass}">${name}${isDir ? '/' : ''}</span>`;
         }
-        return;
+    } catch (error) {
+        console.error(`Giriş formatlanırken hata: ${name}`, error);
+        return name;
     }
+}
 
-    let output = listDirectory(targetPath, currentDirContent, showDetails, showHumanReadable).trim();
-
-    // Rekürsif listeleme
-    if (showRecursive) {
-        for (const [name, info] of Object.entries(currentDirContent)) {
-            if (info.type === 'directory') {
-                const subPath = `${targetPath}/${name}`;
-                const subContent = fileSystem[subPath];
-                if (subContent) {
-                    output += listDirectory(subPath, subContent, showDetails, showHumanReadable, 1);
+function listDirectory(path, terminalContent, showDetails = false, showHidden = false, showHumanReadable = false, recursive = false, level = 0, utils) {
+    try {
+        // Yol boşsa veya kök dizinse, "/" olarak ayarla
+        const dirPath = path || '/';
+        
+        // Dizin içeriğini almayı dene
+        const contents = fileSystem.getDirectoryContents(dirPath);
+        
+        if (!contents || contents.length === 0) {
+            // Boş dizin
+            return `<div>${dirPath}: Dizin boş</div>`;
+        }
+        
+        // Detaylı görünüm için tüm içerikleri formatla
+        let output = [];
+        
+        // . ve .. gösterimini kaldırdık
+        
+        // Dizin içeriğini listeleyelim
+        for (const name in contents) {
+            // Gizli dosyaları kontrol et
+            if (name.startsWith('.') && !showHidden) continue;
+            
+            const item = contents[name];
+            const formattedEntry = formatEntry(name, item, showDetails, showHumanReadable);
+            output.push(formattedEntry);
+            
+            // Recursive listeleme
+            if (recursive && item.type === 'directory') {
+                const subDirPath = `${dirPath}${dirPath.endsWith('/') ? '' : '/'}${name}`;
+                const subDirContent = listDirectory(subDirPath, null, showDetails, showHidden, showHumanReadable, recursive, level + 1, utils);
+                
+                if (subDirContent) {
+                    // Recursive olduğunda dizin adını göster
+                    output.push(`\n${subDirPath}:`);
+                    output.push(subDirContent);
                 }
             }
         }
+        
+        // Kolonlu çıktı için (detaylı olmayan görünümde)
+        if (!showDetails) {
+            const formattedOutput = output.join('  ');
+            if (terminalContent && level === 0) {
+                utils.addOutput(formattedOutput, terminalContent);
+            }
+            return formattedOutput;
+        } else {
+            const formattedOutput = output.join('\n');
+            if (terminalContent && level === 0) {
+                utils.addOutput(formattedOutput, terminalContent);
+            }
+            return formattedOutput;
+        }
+    } catch (error) {
+        console.error(`Dizin listelenirken hata: ${path}`, error);
+        if (terminalContent && level === 0) {
+            utils.addOutput(`ls: ${path}: ${error.message}`, terminalContent, 'error');
+        }
+        return null;
     }
+}
 
-    addOutput(output || 'Dizin boş', targetContent);
-
-    // Input'u temizle
-    const input = targetContent.querySelector('.terminal-input');
-    if (input) {
-        input.value = '';
-        input.style.color = '#f8f8f2';
-        const cursor = targetContent.querySelector('.cursor');
-        if (cursor) updateCursorPosition(input, cursor);
+// ls komutu
+export function ls(params, targetContent, commandHistory, currentPath, setPath, utils) {
+    try {
+        // Parametre analizi
+        let showDetails = false;
+        let showHidden = false;
+        let showHumanReadable = false;
+        let recursive = false;
+        let paths = [];
+        
+        // Parametreleri analiz et
+        for (const param of params) {
+            if (param.startsWith('-')) {
+                // Seçenekleri kontrol et
+                for (let i = 1; i < param.length; i++) {
+                    switch (param[i]) {
+                        case 'l':
+                            showDetails = true;
+                            break;
+                        case 'a':
+                            showHidden = true;
+                            break;
+                        case 'h':
+                            showHumanReadable = true;
+                            break;
+                        case 'R':
+                            recursive = true;
+                            break;
+                        default:
+                            utils.addOutput(`ls: geçersiz seçenek -- '${param[i]}'`, targetContent, 'error');
+                            return;
+                    }
+                }
+            } else {
+                // Dizin yolları
+                paths.push(param);
+            }
+        }
+        
+        // Eğer dizin belirtilmemişse, mevcut dizini kullan
+        if (paths.length === 0) {
+            paths.push(currentPath);
+        }
+        
+        // Her yol için dizin içeriğini listele
+        for (const path of paths) {
+            if (paths.length > 1) {
+                utils.addOutput(`${path}:`, targetContent);
+            }
+            
+            let targetPath = path;
+            
+            // Yol göreceli ise mevcut dizine ekle
+            if (!path.startsWith('/')) {
+                targetPath = `${currentPath}${currentPath.endsWith('/') ? '' : '/'}${path}`;
+            }
+            
+            // ~ karakterini /home/guest ile değiştir
+            if (targetPath === '~') {
+                targetPath = '/home/guest';
+            } else if (targetPath.startsWith('~/')) {
+                targetPath = `/home/guest${targetPath.substring(1)}`;
+            }
+            
+            // İçeriği listele
+            listDirectory(targetPath, targetContent, showDetails, showHidden, showHumanReadable, recursive, 0, utils);
+            
+            if (paths.length > 1 && path !== paths[paths.length - 1]) {
+                utils.addOutput('', targetContent);
+            }
+        }
+    } catch (error) {
+        console.error('ls komutu hatası:', error);
+        utils.addOutput(`ls: ${error.message}`, targetContent, 'error');
     }
 } 

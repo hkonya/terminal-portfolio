@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function coffee(params, targetContent, addOutput) {
+export function coffee(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const coffeeArt = `
         ( (
          ) )
@@ -10,5 +10,5 @@ export function coffee(params, targetContent, addOutput) {
       \`---'
       
 ${i18n.t('system.coffee')}`;
-    addOutput(coffeeArt, targetContent);
+    utils.addOutput(coffeeArt, targetContent);
 } 

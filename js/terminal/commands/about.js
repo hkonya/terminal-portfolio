@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function about(params, targetContent, addOutput) {
+export function about(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const aboutText = `
 <span class="highlight">${i18n.t('about.title')} 👋</span>
 
@@ -33,5 +33,5 @@ ${i18n.t('about.personalInterests')}
 
 ⚡ <span class="highlight">${i18n.t('about.letsConnect')}</span> 🚀  
 `;
-    addOutput(aboutText, targetContent);
+    utils.addOutput(aboutText, targetContent);
 }
