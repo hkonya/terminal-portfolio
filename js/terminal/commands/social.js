@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function social(params, targetContent, addOutput) {
+export function social(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const socialText = `
 <span class="highlight">${i18n.t('social.title')}</span>
 
@@ -10,5 +10,5 @@ export function social(params, targetContent, addOutput) {
 • Medium: <a href="https://medium.com/@hasankny" target="_blank">medium.com/@hasankny</a>  
 • Instagram: <a href="https://www.instagram.com/hasankny/" target="_blank">instagram.com/hasankny</a>  
 `;
-    addOutput(socialText, targetContent);
+    utils.addOutput(socialText, targetContent);
 }

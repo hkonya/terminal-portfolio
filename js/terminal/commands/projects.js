@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function projects(params, targetContent, addOutput) {
+export function projects(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const projectsText = `
 <span class="highlight">${i18n.t('projects.title')}</span>
 
@@ -82,5 +82,5 @@ export function projects(params, targetContent, addOutput) {
 ${i18n.t('projects.more')}:
 <a href="https://github.com/hkonya" target="_blank">github.com/hkonya</a>
 `;
-    addOutput(projectsText, targetContent);
+    utils.addOutput(projectsText, targetContent);
 }

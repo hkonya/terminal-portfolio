@@ -28,6 +28,7 @@ import { neofetch } from './commands/neofetch.js';
 import { tree } from './commands/tree.js';
 import { cd } from './commands/cd.js';
 import { history } from './commands/history.js';
+import { pwd } from './commands/pwd.js';
 
 // Terminal modülünü oluştur
 export const Terminal = {
@@ -98,90 +99,151 @@ export const Terminal = {
     },
 
     // Komut tamamlama için yardımcı fonksiyon
-    getCompletions(input, currentPath) {
-        const parts = input.split(' ');
-        const lastWord = parts[parts.length - 1];
-        const command = parts[0];
-
-        // Dosya sistemi yapısı
-        const fileSystem = {
-            '/home/guest': {
-                'portfolio': { type: 'directory', color: '#3498db' }
-            },
-            '/home/guest/portfolio': {
-                'css': { type: 'directory', color: '#3498db' },
-                'js': { type: 'directory', color: '#3498db' },
-                'img': { type: 'directory', color: '#3498db' },
-                'index.html': { type: 'file', color: '#ffffff' },
-                'README.md': { type: 'file', color: '#ffffff' }
-            },
-            '/home/guest/portfolio/css': {
-                'style.css': { type: 'file', color: '#ffffff' }
-            },
-            '/home/guest/portfolio/js': {
-                'main.js': { type: 'file', color: '#ffffff' }
+    async getCompletions(input, currentPath) {
+        try {
+            // FileSystem modülünü import et
+            const fileSystemModule = await import('../FileSystem.js');
+            const fileSystem = fileSystemModule.fileSystem;
+            
+            if (!fileSystem) {
+                console.error('FileSystem yüklenemedi');
+                return [];
             }
-        };
 
-        // Mevcut dizindeki dosya ve klasörleri al
-        const currentDirContent = fileSystem[currentPath] || {};
+            const parts = input.split(' ');
+            const lastWord = parts[parts.length - 1];
+            const command = parts[0];
 
-        // Komut tamamlama
-        const availableCommands = [
-            { name: 'help', color: '#2ecc71' },
-            { name: 'clear', color: '#2ecc71' },
-            { name: 'about', color: '#2ecc71' },
-            { name: 'skills', color: '#2ecc71' },
-            { name: 'projects', color: '#2ecc71' },
-            { name: 'contact', color: '#2ecc71' },
-            { name: 'social', color: '#2ecc71' },
-            { name: 'experience', color: '#2ecc71' },
-            { name: 'whoami', color: '#2ecc71' },
-            { name: 'date', color: '#2ecc71' },
-            { name: 'ls', color: '#2ecc71' },
-            { name: 'cd', color: '#2ecc71' },
-            { name: 'matrix', color: '#2ecc71' },
-            { name: 'sudo', color: '#2ecc71' },
-            { name: 'exit', color: '#2ecc71' },
-            { name: 'coffee', color: '#2ecc71' },
-            { name: 'neofetch', color: '#2ecc71' },
-            { name: 'tree', color: '#2ecc71' },
-            { name: 'history', color: '#2ecc71' },
-            { name: 'pwd', color: '#2ecc71' }
-        ];
+            let completions = [];
 
-        let completions = [];
+            // Eğer komut henüz girilmemişse veya tek kelime ise komut listesini göster
+            if (parts.length === 1) {
+                const availableCommands = [
+                    { name: 'help', color: '#2ecc71' },
+                    { name: 'clear', color: '#2ecc71' },
+                    { name: 'about', color: '#2ecc71' },
+                    { name: 'skills', color: '#2ecc71' },
+                    { name: 'projects', color: '#2ecc71' },
+                    { name: 'contact', color: '#2ecc71' },
+                    { name: 'social', color: '#2ecc71' },
+                    { name: 'experience', color: '#2ecc71' },
+                    { name: 'whoami', color: '#2ecc71' },
+                    { name: 'date', color: '#2ecc71' },
+                    { name: 'ls', color: '#2ecc71' },
+                    { name: 'cd', color: '#2ecc71' },
+                    { name: 'matrix', color: '#2ecc71' },
+                    { name: 'sudo', color: '#2ecc71' },
+                    { name: 'exit', color: '#2ecc71' },
+                    { name: 'coffee', color: '#2ecc71' },
+                    { name: 'neofetch', color: '#2ecc71' },
+                    { name: 'tree', color: '#2ecc71' },
+                    { name: 'history', color: '#2ecc71' },
+                    { name: 'pwd', color: '#2ecc71' }
+                ];
 
-        // Eğer komut henüz girilmemişse veya tek kelime ise
-        if (parts.length === 1) {
-            const commandCompletions = [...availableCommands]
-                .filter(cmd => cmd.name.startsWith(input))
-                .map(cmd => ({ value: cmd.name, color: cmd.color }));
-            completions.push(...commandCompletions);
+                const commandCompletions = availableCommands
+                    .filter(cmd => cmd.name.startsWith(input))
+                    .map(cmd => ({ value: cmd.name, color: cmd.color }));
+                completions.push(...commandCompletions);
+                return completions;
+            }
+
+            // Mevcut dizindeki dosya ve klasörleri al
+            const dirContents = fileSystem.getDirectoryContents(currentPath);
+            if (!dirContents) {
+                console.error(`Dizin içeriği alınamadı: ${currentPath}`);
+                return [];
+            }
+
+            // cd komutu için dizin tamamlama
+            if (command === 'cd') {
+                // Özel durumlar
+                if (lastWord === '~' || lastWord === '') {
+                    completions.push({ value: `cd /home/guest`, color: '#3498db' });
+                    return completions;
+                }
+
+                // ~ ile başlayan yollar için
+                if (lastWord.startsWith('~/')) {
+                    const subPath = lastWord.substring(2);
+                    const homePath = '/home/guest';
+                    
+                    // Home dizinini kontrol et
+                    const homeContents = fileSystem.getDirectoryContents(homePath);
+                    if (homeContents) {
+                        Object.entries(homeContents)
+                            .filter(([name, item]) => 
+                                item.type === 'directory' && name.startsWith(subPath))
+                            .forEach(([name, item]) => {
+                                completions.push({ 
+                                    value: `cd ~/${name}`, 
+                                    color: '#3498db' 
+                                });
+                            });
+                    }
+                    
+                    return completions;
+                }
+
+                // Mutlak yol için
+                if (lastWord.startsWith('/')) {
+                    // Yolu bölümlere ayır
+                    const pathParts = lastWord.split('/').filter(p => p);
+                    const lastPart = pathParts.pop() || '';
+                    let checkPath = '/';
+                    
+                    // Son bölüm hariç yolu oluştur
+                    if (pathParts.length > 0) {
+                        checkPath = '/' + pathParts.join('/');
+                    }
+                    
+                    const targetContents = fileSystem.getDirectoryContents(checkPath);
+                    if (targetContents) {
+                        Object.entries(targetContents)
+                            .filter(([name, item]) => 
+                                item.type === 'directory' && name.startsWith(lastPart))
+                            .forEach(([name, item]) => {
+                                const newPath = `${checkPath}${checkPath === '/' ? '' : '/'}${name}`;
+                                completions.push({ 
+                                    value: `cd ${newPath}`, 
+                                    color: '#3498db' 
+                                });
+                            });
+                    }
+                    
+                    return completions;
+                }
+
+                // Göreceli yol için mevcut dizindeki klasörleri kontrol et
+                Object.entries(dirContents)
+                    .filter(([name, item]) => 
+                        item.type === 'directory' && name.startsWith(lastWord))
+                    .forEach(([name, item]) => {
+                        completions.push({ 
+                            value: `cd ${name}`, 
+                            color: '#3498db' 
+                        });
+                    });
+            } 
+            // ls komutu için dosya ve klasör tamamlama
+            else if (command === 'ls') {
+                // Tüm dosya ve klasörleri göster
+                Object.entries(dirContents)
+                    .filter(([name]) => name.startsWith(lastWord))
+                    .forEach(([name, item]) => {
+                        const color = item.type === 'directory' ? '#3498db' : '#ffffff';
+                        completions.push({ 
+                            value: `ls ${name}`, 
+                            color 
+                        });
+                    });
+            }
+
+            return completions;
+        } catch (error) {
+            console.error('Otomatik tamamlama hatası:', error);
+            return [];
         }
-        // cd komutu için dizin tamamlama
-        else if (command === 'cd') {
-            const dirCompletions = Object.entries(currentDirContent)
-                .filter(([name, info]) => 
-                    info.type === 'directory' && name.startsWith(lastWord))
-                .map(([name, info]) => ({ 
-                    value: `cd ${name}`,
-                    color: info.color 
-                }));
-            completions.push(...dirCompletions);
-        }
-        // ls, cat gibi komutlar için dosya tamamlama
-        else if (['ls', 'cat'].includes(command)) {
-            const fileCompletions = Object.entries(currentDirContent)
-                .filter(([name]) => name.startsWith(lastWord))
-                .map(([name, info]) => ({ 
-                    value: `${command} ${name}`, 
-                    color: info.color 
-                }));
-            completions.push(...fileCompletions);
-        }
-
-        return completions;
     },
 
     // Komut tamamlamalarını göstermek için yardımcı fonksiyon
@@ -250,9 +312,7 @@ export const Terminal = {
         'neofetch': (params, targetContent) => neofetch(params, targetContent, addOutput),
         'tree': (params, targetContent) => tree(params, targetContent, addOutput),
         'history': (params, targetContent, history) => history(params, targetContent, history),
-        'pwd': (params, targetContent, history, path) => {
-            addOutput(path || '/home/guest/portfolio', targetContent);
-        },
+        'pwd': (params, targetContent, history, path) => pwd(params, targetContent, history, path),
         'cd': (params, targetContent, history, path, setPath) => cd(params, targetContent, path, setPath, { updateCursorPosition }),
         'setlocale': (params, targetContent) => {
             if (params.length === 0) {
@@ -315,9 +375,7 @@ ${i18n.t('about.description')}
   contact    -> ${i18n.t('commandDescriptions.contact')}
   social     -> ${i18n.t('commandDescriptions.social')}
 
-${i18n.t('help.intro')}!
-
-<span style="color: #50fa7b">guest@hasankonya:~$</span> cd portfolio/`;
+${i18n.t('help.intro')}!`;
 
         // ASCII banner
         const banner = document.createElement('pre');
@@ -335,7 +393,7 @@ ${i18n.t('help.intro')}!
         const prompt = document.createElement('div');
         prompt.className = 'terminal-prompt';
         prompt.innerHTML = `
-            <span class="prompt">guest@hasankonya:~/portfolio$</span>
+            <span class="prompt">guest@hasankonya:~$</span>
             <div class="input-container">
                 <input type="text" class="terminal-input">
                 <span class="cursor"></span>
@@ -443,9 +501,15 @@ ${i18n.t('help.intro')}!
                 }
             } else if (e.key === 'Tab') {
                 e.preventDefault();
-                const completions = this.getCompletions(input.value, data.currentPath);
-                const terminalContent = terminal.querySelector('.terminal-content');
-                this.showCompletions(completions, terminalContent);
+                // Async fonksiyonu çağır
+                this.getCompletions(input.value, data.currentPath)
+                    .then(completions => {
+                        const terminalContent = terminal.querySelector('.terminal-content');
+                        this.showCompletions(completions, terminalContent);
+                    })
+                    .catch(error => {
+                        console.error('Tab tamamlama hatası:', error);
+                    });
             }
         });
 
@@ -471,18 +535,43 @@ ${i18n.t('help.intro')}!
                     input.style.color = '#f8f8f2';
                     
                     if (this.commands[command]) {
-                        this.commands[command](params, terminalContent, data.commandHistory, data.currentPath, (newPath) => {
-                            data.currentPath = newPath;
-                            if (tab) {
-                                updateTabTitle(tab, newPath);
-                                updateTerminalHeader(newPath);
-                                const promptSpan = terminal.querySelector('.prompt');
-                                if (promptSpan) {
-                                    const shortPath = newPath.replace('/home/guest', '~');
-                                    promptSpan.textContent = `guest@hasankonya:${shortPath}$`;
-                                }
-                            }
-                        });
+                        try {
+                            // Yardımcı fonksiyonlar
+                            const utils = { 
+                                addOutput: (text, target, className = '') => {
+                                    const output = document.createElement('div');
+                                    output.className = `terminal-line ${className}`;
+                                    output.innerHTML = text;
+                                    const promptElement = target.querySelector('.terminal-prompt');
+                                    target.insertBefore(output, promptElement);
+                                },
+                                updateCursorPosition
+                            };
+                            
+                            // Komutu çalıştır
+                            this.commands[command](
+                                params, 
+                                terminalContent, 
+                                data.commandHistory, 
+                                data.currentPath, 
+                                (newPath) => {
+                                    data.currentPath = newPath;
+                                    if (tab) {
+                                        updateTabTitle(tab, newPath);
+                                        updateTerminalHeader(newPath);
+                                        const promptSpan = terminal.querySelector('.prompt');
+                                        if (promptSpan) {
+                                            const shortPath = newPath.replace('/home/guest', '~');
+                                            promptSpan.textContent = `guest@hasankonya:${shortPath}$`;
+                                        }
+                                    }
+                                },
+                                utils
+                            );
+                        } catch (error) {
+                            console.error(`Komut çalıştırma hatası (${command}):`, error);
+                            addOutput(`Komut çalıştırılırken hata oluştu: ${error.message}`, terminalContent, 'error');
+                        }
                     } else {
                         // Komut bulunamadıysa öneri göster
                         this.suggestCommand(inputValue.split(' ')[0].toLowerCase(), terminalContent);
@@ -505,7 +594,35 @@ ${i18n.t('help.intro')}!
         }, 0);
     },
 
-    init() {
+    async init() {
+        // Dosya sistemine erişimi sağla
+        window.Terminal = this;
+        
+        // Terminal verilerini başlat
+        this.commandHistory = [];
+        this.commands = {
+            'help': help,
+            'clear': clear,
+            'about': about,
+            'skills': skills,
+            'projects': projects,
+            'contact': contact,
+            'social': social,
+            'experience': experience,
+            'whoami': whoami,
+            'date': date,
+            'ls': ls,
+            'cd': cd,
+            'pwd': pwd,
+            'matrix': matrix,
+            'sudo': sudo,
+            'exit': exit,
+            'coffee': coffee,
+            'neofetch': neofetch,
+            'tree': tree,
+            'history': history
+        };
+        
         const self = this;
 
         // İlk sekme için veri oluştur
@@ -513,7 +630,7 @@ ${i18n.t('help.intro')}!
         this.terminalData.set(firstTabId, {
             commandHistory: [],
             historyIndex: -1,
-            currentPath: '/home/guest/portfolio'
+            currentPath: '/home/guest'
         });
         
         // İlk terminal içeriğini oluştur
@@ -683,7 +800,7 @@ ${i18n.t('help.intro')}!
             this.terminalData.set(tabId, {
                 commandHistory: [],
                 historyIndex: -1,
-                currentPath: '/home/guest/portfolio'
+                currentPath: '/home/guest'
             });
 
             const terminalTabs = document.querySelector('.terminal-tabs');

@@ -5,13 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hasan KONYA - 🦾 Senior Software Engineer @Turksat | Dev | Ops | Web & Mobile & Cloud</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/windows.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 </head>
 <body>
     <!-- Üst Bar -->
     <div class="top-bar">
         <div class="top-bar-left">
-            <i class="fas fa-terminal"></i>
+            <i class="fas fa-terminal sidebar-toggle"></i>
             <span data-text="Hasan Konya">Hasan Konya</span>
         </div>
         <div class="top-bar-center">
@@ -26,57 +33,83 @@
     <!-- Sol Uygulama Barı -->
     <div class="side-bar">
         <div class="app-icons">
-            <a href="#" class="app-icon active">
-                <img src="img/terminal.png" alt="Terminal">
-            </a>
-            <a href="https://github.com/hkonya" target="_blank" class="app-icon">
-                <img src="img/github.png" alt="GitHub">
-            </a>
-            <a href="https://linkedin.com/in/hasankny" target="_blank" class="app-icon">
-                <img src="img/linkedin.png" alt="LinkedIn">
-            </a>
-            <a href="https://dev.to/hkonya" target="_blank" class="app-icon">
-                <img src="img/dev.png" alt="Dev.to">
-            </a>
-            <a href="https://medium.com/@hasankny" target="_blank" class="app-icon">
-                <img src="img/medium.png" alt="Medium">
-            </a>
-            <a href="https://www.instagram.com/hasankny/" target="_blank" class="app-icon">
-                <img src="img/instagram.png" alt="Instagram">
-            </a>
+            <div class="system-apps">
+                <a href="#" class="app-icon active" data-app="terminal">
+                    <img src="img/apps/terminal-app.png" alt="Terminal">
+                    <span class="tooltip">Terminal</span>
+                </a>
+                <a href="#" class="app-icon" data-app="filemanager">
+                    <img src="img/apps/filemanager-app.png" alt="Dosya Yöneticisi">
+                    <span class="tooltip">Dosya Yöneticisi</span>
+                </a>
+            </div>
+            <div class="active-apps">
+                <!-- Dinamik olarak açılan uygulamalar buraya eklenecek -->
+            </div>
+            <hr class="sidebar-separator">
+            <div class="system-apps">
+                <a href="#" class="app-icon" data-app="trash">
+                    <img src="img/places/user-trash.png" alt="Çöp Kutusu">
+                    <span class="tooltip">Çöp Kutusu</span>
+                </a>
+            </div>
+            <div class="social-apps">
+                <a href="https://github.com/hkonya" target="_blank" class="app-icon">
+                    <img src="img/github.png" alt="GitHub">
+                </a>
+                <a href="https://linkedin.com/in/hasankny" target="_blank" class="app-icon">
+                    <img src="img/linkedin.png" alt="LinkedIn">
+                </a>
+                <a href="https://dev.to/hkonya" target="_blank" class="app-icon">
+                    <img src="img/dev.png" alt="Dev.to">
+                </a>
+                <a href="https://medium.com/@hasankny" target="_blank" class="app-icon">
+                    <img src="img/medium.png" alt="Medium">
+                </a>
+                <a href="https://www.instagram.com/hasankny/" target="_blank" class="app-icon">
+                    <img src="img/instagram.png" alt="Instagram">
+                </a>
+            </div>
         </div>
+    </div>
+
+    <div class="desktop-icons">
+
     </div>
 
     <div class="terminal">
         <div class="terminal-header">
             <div class="terminal-controls">
                 <button class="header-button new-tab-btn">
-                    <i class="fas fa-plus"></i>
+                    <i class="ph ph-plus"></i>
                 </button>
             </div>
             <div class="terminal-title">guest@hasankonya: ~</div>
             <div class="header-actions">
                 <button class="header-button">
-                    <i class="fas fa-search"></i>
+                    <i class="ph ph-magnifying-glass"></i>
                 </button>
                 <button class="header-button">
-                    <i class="fas fa-bars"></i>
+                    <i class="ph ph-list"></i>
                 </button>
                 <button class="header-button minimize">
-                    <i class="fas fa-minus"></i>
+                    <i class="ph ph-minus"></i>
                 </button>
                 <button class="header-button fullscreen">
-                    <i class="far fa-square"></i>
+                    <i class="ph ph-corners-out"></i>
                 </button>
                 <button class="header-button close">
-                    <i class="fas fa-times"></i>
+                    <i class="ph ph-x"></i>
                 </button>
             </div>
         </div>
         <div class="terminal-tabs">
             <div class="terminal-tab active">
-                guest@hasankonya:~/portfolio$ <i class="fas fa-times terminal-tab-close"></i>
+                <i class="ph ph-terminal"></i> guest@hasankonya:~$ <i class="ph ph-x terminal-tab-close"></i>
             </div>
+            <button class="terminal-tab-new">
+                <i class="ph ph-plus"></i>
+            </button>
         </div>
         <div class="terminal-container">
             <div class="terminal-instance active">

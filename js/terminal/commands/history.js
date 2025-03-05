@@ -1,9 +1,8 @@
-import { addOutput } from '../utils.js';
 import { i18n } from '../../i18n.js';
 
-export function history(params, targetContent, commandHistory) {
+export function history(params, targetContent, commandHistory, currentPath, setPath, utils) {
     if (!commandHistory || commandHistory.length === 0) {
-        addOutput(i18n.t('history.empty'), targetContent);
+        utils.addOutput(i18n.t('history.empty'), targetContent);
         return;
     }
 
@@ -12,5 +11,5 @@ export function history(params, targetContent, commandHistory) {
         output += `${index + 1}  ${command}\n`;
     });
 
-    addOutput(output.trim(), targetContent);
+    utils.addOutput(output.trim(), targetContent);
 } 

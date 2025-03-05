@@ -44,7 +44,7 @@ body {
 
 .terminal-header {
     background-color: #272627;
-    padding: 8px 15px;
+    padding: 9px 15px;
     display: grid;
     grid-template-columns: 150px 1fr 150px;
     align-items: center;
@@ -322,63 +322,118 @@ footer {
     position: fixed;
     left: 0;
     top: 30px;
-    width: 60px;
-    height: calc(100vh - 30px);
-    background-color: rgba(26, 27, 38, 0.3);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    bottom: 0;
+    width: 70px;
+    background-color: rgba(32, 32, 32, 0.8);
+    backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 10px 0;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    z-index: 999;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Sidebar gizleme sınıfı */
+.side-bar.hidden {
+    transform: translateX(-100%);
+}
+
+/* Sidebar toggle ikonu */
+.sidebar-toggle {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    color: #d13d01;
 }
 
 .app-icons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    width: 100%;
+    height: 100%;
+}
+
+.system-apps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.active-apps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 10px;
+    padding: 10px 0;
+}
+
+.sidebar-separator {
+    border: none;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 5px 10px;
+}
+
+.social-apps {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 0;
 }
 
 .app-icon {
-    width: 100%;
-    height: 45px;
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     transition: all 0.3s ease;
     position: relative;
 }
 
 .app-icon img {
-    width: 30px;
-    height: 30px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
-    transition: all 0.3s ease;
 }
 
 .app-icon:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-}
-
-.app-icon:hover img {
-    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
 }
 
 .app-icon.active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
-.app-icon.active::before {
-    content: '';
+.app-icon .tooltip {
     position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background-color: #d13d01;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    margin-left: 10px;
+    z-index: 9999;
+}
+
+.app-icon:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
 }
 
 .new-tab-button {
@@ -424,7 +479,8 @@ footer {
     
     .terminal {
         min-height: 70vh;
-        margin-left: 50px;
+        margin-left: 0;
+        width: 100%;
     }
     
     .terminal-text {
@@ -436,7 +492,16 @@ footer {
     }
     
     .side-bar {
-        width: 50px;
+        transform: translateX(-100%);
+    }
+
+    .side-bar.show {
+        transform: translateX(0);
+    }
+
+    .terminal.with-sidebar {
+        margin-left: 60px;
+        width: calc(100% - 60px);
     }
 
     .app-icon img {
@@ -965,4 +1030,414 @@ footer {
 .terminal.fullscreen .terminal-container {
     height: calc(100vh - 90px); /* top-bar ve terminal-header yüksekliğini çıkar */
     max-height: none;
+}
+
+/* Masaüstü İkonları */
+.desktop-icons {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 10;
+    width: calc(100vw - 70px);
+    height: calc(100vh - 40px);
+    pointer-events: none;
+}
+
+.desktop-icon {
+    width: 100px;
+    text-align: center;
+    cursor: grab;
+    padding: 10px;
+    border-radius: 8px;
+    position: absolute;
+    user-select: none;
+    pointer-events: auto;
+    will-change: transform, left, top;
+    transition: background-color 0.2s ease;
+    transform-origin: center center;
+}
+
+.desktop-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s ease;
+}
+
+.desktop-icon.selected {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.desktop-icon.dragging {
+    opacity: 0.85;
+    cursor: grabbing !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.15);
+    transition: none !important;
+    z-index: 1000;
+}
+
+.desktop-icon:active {
+    cursor: grabbing;
+}
+
+.icon-wrapper {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-wrapper img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    position: relative;
+    z-index: 1;
+}
+
+.icon-label {
+    color: #ffffff;
+    font-size: 14px;
+    display: block;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    word-wrap: break-word;
+    max-width: 100%;
+    margin-top: 6px;
+    line-height: 1.3;
+}
+
+/* Sürükleme stilleri */
+.desktop-icon.dragging {
+    cursor: grabbing;
+    pointer-events: none;
+}
+
+.desktop-icon:active {
+    cursor: grabbing;
+}
+
+.desktop-icon {
+    cursor: grab;
+}
+
+.context-menu {
+    position: absolute;
+    min-width: 220px;
+    padding: 5px 0;
+    border-radius: 6px;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    display: none;
+    user-select: none;
+}
+
+.context-menu.show {
+    display: block;
+}
+
+.context-menu-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.context-menu-item i {
+    margin-right: 8px;
+    min-width: 16px;
+    text-align: center;
+}
+
+.context-menu-item:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.context-menu-separator {
+    height: 1px;
+    margin: 4px 0;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.context-menu-item.disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Alt menü stilleri */
+.context-menu-item.has-submenu {
+    padding-right: 36px;
+}
+
+.context-menu-item .submenu-arrow {
+    position: absolute;
+    right: 12px;
+    left: auto;
+    font-size: 12px;
+}
+
+.context-menu-item .submenu {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background: rgba(40, 40, 40, 0.98);
+    border-radius: 4px;
+    padding: 4px 0;
+    min-width: 200px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.context-menu-item:hover .submenu {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dosya Yöneticisi Sembolleri */
+.file-item.symlink .symlink-icon {
+    color: #3584e4;
+    font-size: 10px;
+    margin-left: 3px;
+    vertical-align: super;
+}
+
+.file-item.symlink .symlink-target {
+    font-size: 10px;
+    color: #888;
+    margin-top: -5px;
+    padding-left: 28px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.file-item.symlink img {
+    opacity: 0.8;
+}
+
+/* Context menu kısayol stili */
+.context-menu-shortcut {
+    margin-left: 20px;
+    font-size: 12px;
+    opacity: 0.7;
+    float: right;
+}
+
+/* Modal ve pencereler için z-index ayarları */
+.file-manager {
+    z-index: 900;
+}
+
+.file-manager .context-menu {
+    z-index: 10000; /* Context menünün tüm diğer öğelerden üstte olmasını sağla */
+}
+
+/* Yeni Klasör Modal Diyaloğu */
+.name-dialog-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10001;
+}
+
+.name-dialog-content {
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    font-family: 'Ubuntu', sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.name-dialog-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.name-dialog-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: normal;
+    color: #333;
+}
+
+.name-dialog-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+}
+
+.name-dialog-close:hover {
+    color: #333;
+}
+
+.name-dialog-body {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.name-input-container {
+    margin-bottom: 15px;
+}
+
+.name-input-container label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
+.name-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+}
+
+.name-input:focus {
+    border-color: #e95420;
+    box-shadow: 0 0 0 2px rgba(233, 84, 32, 0.2);
+}
+
+.name-dialog-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #ddd;
+    text-align: right;
+}
+
+.name-action-btn {
+    background-color: #e95420;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.name-action-btn:hover {
+    background-color: #c84617;
+}
+
+/* Hata mesajı */
+.name-error-message {
+    color: #d9534f;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Koyu tema */
+.dark-theme .name-dialog-content {
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+}
+
+.dark-theme .name-dialog-header {
+    border-bottom: 1px solid #444;
+}
+
+.dark-theme .name-dialog-header h3 {
+    color: #e6e6e6;
+}
+
+.dark-theme .name-dialog-close {
+    color: #999;
+}
+
+.dark-theme .name-dialog-close:hover {
+    color: #e6e6e6;
+}
+
+.dark-theme .name-input-container label {
+    color: #bbb;
+}
+
+.dark-theme .name-input {
+    background-color: #3d3d3d;
+    border-color: #555;
+    color: #e6e6e6;
+}
+
+.dark-theme .name-dialog-footer {
+    border-top: 1px solid #444;
+}
+
+.dark-theme .name-error-message {
+    color: #ff6b6b;
+}
+
+/* Onay diyaloğu için ek stiller */
+.confirm-dialog-modal .confirm-message {
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.dark-theme .confirm-dialog-modal .confirm-message {
+    color: #e6e6e6;
+}
+
+.confirm-dialog-modal .name-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.confirm-dialog-modal .cancel-btn {
+    background-color: #6c757d;
+}
+
+.confirm-dialog-modal .cancel-btn:hover {
+    background-color: #5a6268;
+}
+
+.confirm-dialog-modal .confirm-btn {
+    background-color: #e95420;
+}
+
+.confirm-dialog-modal .confirm-btn:hover {
+    background-color: #c84617;
+}
+
+.dark-theme .confirm-dialog-modal .cancel-btn {
+    background-color: #555;
+}
+
+.dark-theme .confirm-dialog-modal .cancel-btn:hover {
+    background-color: #444;
+}
+
+.dark-theme .confirm-dialog-modal .confirm-btn {
+    background-color: #e95420;
+}
+
+.dark-theme .confirm-dialog-modal .confirm-btn:hover {
+    background-color: #c84617;
 }

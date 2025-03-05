@@ -1,10 +1,142 @@
 import { i18n } from './i18n.js';
 import { Terminal } from './terminal/terminal.js';
 import { updateTabTitle, updateCursorPosition } from './terminal/utils.js';
+import { DesktopIcon } from './desktop/icons.js';
+import { WindowManager } from './window/WindowManager.js';
+import { FileManager } from './apps/FileManager.js';
+import { TrashManager } from './apps/TrashManager.js';
+import { checkAndInitializeFileSystem } from './FileSystemInitializer.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Terminal'i başlat
     Terminal.init();
+    
+    // Masaüstü ikonlarını başlat
+    new DesktopIcon();
+    
+    // WindowManager'ı başlat ve terminal penceresini ekle
+    const windowManager = WindowManager.getInstance();
+    const terminalWindow = document.querySelector('.terminal');
+    if (terminalWindow) {
+        windowManager.addWindow(terminalWindow);
+        windowManager.setActiveWindow(terminalWindow);
+    }
+    
+    // Terminal başlığını mobil için optimize et
+    function updateTerminalTitle() {
+        const terminalTitle = document.querySelector('.terminal-title');
+        if (!terminalTitle) return;
+
+        const fullTitle = terminalTitle.textContent;
+        const parts = fullTitle.split(':');
+        
+        if (parts.length === 2) {
+            const userHost = parts[0].trim(); // guest@hasankonya
+            let path = parts[1].trim(); // ~/portfolio gibi
+
+            // Mobil görünümde
+            if (window.innerWidth <= 768) {
+                // Başlığın genişliğini kontrol et
+                const tempSpan = document.createElement('span');
+                tempSpan.style.visibility = 'hidden';
+                tempSpan.style.fontSize = '11px'; // Mobil font boyutu
+                tempSpan.textContent = fullTitle;
+                document.body.appendChild(tempSpan);
+                
+                const titleWidth = tempSpan.offsetWidth;
+                document.body.removeChild(tempSpan);
+
+                // Mevcut container genişliğini al
+                const containerWidth = terminalTitle.offsetWidth;
+
+                // Eğer tam başlık sığmıyorsa kısalt
+                if (titleWidth > containerWidth) {
+                    // Path'i kısalt
+                    if (path.length > 10) {
+                        const pathParts = path.split('/');
+                        if (pathParts.length > 2) {
+                            path = '.../' + pathParts[pathParts.length - 1];
+                        }
+                    }
+                    
+                    // Kullanıcı adını kısalt
+                    const [user, host] = userHost.split('@');
+                    const shortTitle = `${user}@${host.split('.')[0]}: ${path}`;
+                    
+                    terminalTitle.textContent = shortTitle;
+                } else {
+                    // Tam başlık sığıyorsa onu göster
+                    terminalTitle.textContent = fullTitle;
+                }
+            } else {
+                // Masaüstünde tam başlık
+                terminalTitle.textContent = fullTitle;
+            }
+        }
+    }
+
+    // Sayfa yüklendiğinde ve ekran boyutu değiştiğinde başlığı güncelle
+    updateTerminalTitle();
+    window.addEventListener('resize', updateTerminalTitle);
+    
+    // Side bar kontrolü
+    const sideBar = document.querySelector('.side-bar');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const terminal = document.querySelector('.terminal');
+    let sidebarTimeout;
+
+    function toggleSidebar() {
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            // Eğer sidebar zaten açıksa ve yeni bir tıklama geldiyse
+            if (sideBar.classList.contains('show')) {
+                clearTimeout(sidebarTimeout);
+                sideBar.classList.remove('show');
+            } else {
+                // Sidebar'ı aç ve 5 saniye sonra kapat
+                sideBar.classList.add('show');
+                clearTimeout(sidebarTimeout);
+                sidebarTimeout = setTimeout(() => {
+                    sideBar.classList.remove('show');
+                }, 5000); // 5 saniye
+            }
+        } else {
+            sideBar.classList.toggle('hidden');
+            terminal.classList.toggle('with-sidebar');
+        }
+    }
+
+    // Ekran boyutu değiştiğinde kontrol
+    window.addEventListener('resize', () => {
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) {
+            sideBar.classList.remove('show');
+            sideBar.classList.remove('hidden');
+            terminal.classList.add('with-sidebar');
+        } else {
+            terminal.classList.remove('with-sidebar');
+            sideBar.classList.remove('show');
+        }
+    });
+
+    // Sidebar toggle olayı
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+
+    // Sayfa yüklendiğinde kontrol
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        // Mobilde sidebar'ı göster ve 5 saniye sonra kapat
+        sideBar.classList.add('show');
+        sidebarTimeout = setTimeout(() => {
+            sideBar.classList.remove('show');
+        }, 5000); // 5 saniye
+    } else {
+        // Masaüstünde terminal'e sidebar margin'i ekle
+        terminal.classList.add('with-sidebar');
+    }
     
     // Saat ve tarih güncelleme fonksiyonu
     function updateDateTime() {
@@ -66,6 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleDarkTheme(isDark) {
         // Config'i güncelle
         updateConfig({ darkTheme: isDark });
+
+        // Body'e dark-theme class'ını ekle/kaldır
+        if (isDark) {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('dark-theme');
+        }
 
         // Body arka plan resmini güncelle
         document.body.style.backgroundImage = isDark ? "url(./img/bg_dark.png)" : "url(./img/bg.png)";
@@ -470,53 +609,43 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (minimizeBtn) {
         minimizeBtn.addEventListener('click', () => {
-            const terminal = document.querySelector('.terminal');
+            terminalWindow.classList.add('minimized');
             const terminalIcon = document.querySelector('.app-icon.active');
             
-            // Terminal'i minimize et
-            terminal.classList.add('minimized');
-            
-            // Active sınıfını kaldır ve minimized ekle
             terminalIcon.classList.remove('active');
             terminalIcon.classList.add('minimized');
             
-            // Notification dot ekle
             let notificationDot = terminalIcon.querySelector('.notification-dot');
             if (!notificationDot) {
                 notificationDot = document.createElement('div');
                 notificationDot.className = 'notification-dot';
                 terminalIcon.appendChild(notificationDot);
             }
+
+            windowManager.updateWindowState();
         });
     }
 
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-            const terminal = document.querySelector('.terminal');
+            terminalWindow.style.display = 'none';
             const terminalIcon = document.querySelector('.app-icon.active');
             const terminalTabs = document.querySelector('.terminal-tabs');
             const terminalInstances = document.querySelectorAll('.terminal-instance');
             
-            // Terminal'i gizle
-            terminal.style.display = 'none';
-            
-            // Active sınıfını kaldır
             terminalIcon.classList.remove('active');
-            
-            // Tüm sekmeleri ve verilerini temizle
             terminalTabs.innerHTML = '';
             Terminal.terminalData.clear();
-            
-            // Terminal içeriğini temizle
             terminalInstances.forEach(instance => instance.remove());
             
-            // Notification dot ekle
             let notificationDot = terminalIcon.querySelector('.notification-dot');
             if (!notificationDot) {
                 notificationDot = document.createElement('div');
                 notificationDot.className = 'notification-dot';
                 terminalIcon.appendChild(notificationDot);
             }
+
+            windowManager.removeWindow(terminalWindow);
         });
     }
 
@@ -525,100 +654,101 @@ document.addEventListener('DOMContentLoaded', () => {
         fullscreenBtn.addEventListener('click', () => {
             const terminal = document.querySelector('.terminal');
             const icon = fullscreenBtn.querySelector('i');
+            const isMobile = window.innerWidth <= 768;
 
             if (!terminal.classList.contains('fullscreen')) {
                 // Tam ekrana geç
                 terminal.classList.add('fullscreen');
-                icon.className = 'far fa-compress-arrows-alt';
+                icon.className = 'ph ph-corners-in';
+                
+                // Mobilde sidebar'ı kapat
+                if (isMobile) {
+                    const sideBar = document.querySelector('.side-bar');
+                    sideBar.classList.remove('show');
+                }
             } else {
                 // Tam ekrandan çık
                 terminal.classList.remove('fullscreen');
-                icon.className = 'far fa-square';
+                icon.className = 'ph ph-corners-out';
             }
         });
     }
 
     // Terminal ikonuna tıklama olayı ekle
-    const terminalIcon = document.querySelector('.app-icon');
-    if (terminalIcon) {
-        // İlk yüklemede notification dot'u ekle
+    const terminalAppIcon = document.querySelector('.app-icon');
+    if (terminalAppIcon) {
         let notificationDot = document.createElement('div');
         notificationDot.className = 'notification-dot';
-        terminalIcon.appendChild(notificationDot);
+        terminalAppIcon.appendChild(notificationDot);
 
-        terminalIcon.addEventListener('click', () => {
-            const terminal = document.querySelector('.terminal');
-            
-            if (terminalIcon.classList.contains('minimized')) {
-                // Terminal'i geri getir
-                terminal.classList.remove('minimized');
-                terminal.style.display = 'flex';
+        terminalAppIcon.addEventListener('click', () => {
+            if (terminalAppIcon.classList.contains('minimized')) {
+                terminalWindow.classList.remove('minimized');
+                terminalWindow.style.display = 'flex';
+                terminalAppIcon.classList.remove('minimized');
+                terminalAppIcon.classList.add('active');
                 
-                // Terminal ikonunun minimized sınıfını kaldır ve active ekle
-                terminalIcon.classList.remove('minimized');
-                terminalIcon.classList.add('active');
-                
-                // Input'u focusla
                 const activeInput = document.querySelector('.terminal-instance.active .terminal-input');
                 if (activeInput) activeInput.focus();
-            } else if (!terminalIcon.classList.contains('active')) {
-                // Terminal kapalıysa yeni bir terminal başlat
-                terminal.classList.remove('minimized');
-                terminal.style.display = 'flex';
-                terminalIcon.classList.add('active');
+
+                windowManager.addWindow(terminalWindow);
+                windowManager.setActiveWindow(terminalWindow);
+            } else if (!terminalAppIcon.classList.contains('active')) {
+                terminalWindow.classList.remove('minimized');
+                terminalWindow.style.display = 'flex';
+                terminalAppIcon.classList.add('active');
                 
-                // Notification dot'u kaldır
-                const notificationDot = terminalIcon.querySelector('.notification-dot');
+                const notificationDot = terminalAppIcon.querySelector('.notification-dot');
                 if (notificationDot) {
                     notificationDot.remove();
                 }
                 
-                // Yeni bir sekme oluştur
                 const tabId = `terminal-${Terminal.tabCounter++}`;
                 Terminal.terminalData.set(tabId, {
                     commandHistory: [],
                     historyIndex: -1,
-                    currentPath: '/home/guest/portfolio'
+                    currentPath: '/home/guest'
                 });
                 
                 const terminalTabs = document.querySelector('.terminal-tabs');
                 const terminalContainer = document.querySelector('.terminal-container');
                 
-                // Yeni sekme oluştur
                 const newTab = document.createElement('div');
                 newTab.className = 'terminal-tab active';
                 newTab.dataset.tabId = tabId;
                 updateTabTitle(newTab, Terminal.terminalData.get(tabId).currentPath);
                 
-                // Yeni terminal instance oluştur
                 const newTerminal = document.createElement('div');
                 newTerminal.className = 'terminal-instance active';
                 newTerminal.dataset.tabId = tabId;
                 
-                // Terminal içeriğini oluştur
                 const terminalContent = Terminal.createTerminalContent();
                 newTerminal.appendChild(terminalContent);
                 
-                // Yeni sekme ve içeriği ekle
                 terminalTabs.appendChild(newTab);
                 terminalContainer.appendChild(newTerminal);
                 
-                // Event listener'ları ayarla
                 const newInput = newTerminal.querySelector('.terminal-input');
                 const newCursor = newTerminal.querySelector('.cursor');
                 Terminal.setupTerminalEvents(newTerminal, newInput, newCursor);
                 
-                // Input'u focusla
                 if (newInput) {
                     newInput.focus();
                     updateCursorPosition(newInput, newCursor);
                 }
+
+                windowManager.addWindow(terminalWindow);
+                windowManager.setActiveWindow(terminalWindow);
             }
         });
     }
 
+    // Terminal'e tıklama olayı ekle
+    terminalWindow.addEventListener('mousedown', () => {
+        windowManager.setActiveWindow(terminalWindow);
+    });
+
     // Terminal sürükleme işlevselliği
-    const terminal = document.querySelector('.terminal');
     const terminalHeader = document.querySelector('.terminal-header');
     let isDragging = false;
     let currentX;
@@ -633,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('mouseup', dragEnd);
 
     function dragStart(e) {
-        if (!terminal.classList.contains('fullscreen') && e.target.closest('.terminal-header')) {
+        if (!terminalWindow.classList.contains('fullscreen') && e.target.closest('.terminal-header')) {
             initialX = e.clientX - xOffset;
             initialY = e.clientY - yOffset;
             isDragging = true;
@@ -649,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
             xOffset = currentX;
             yOffset = currentY;
 
-            setTranslate(currentX, currentY, terminal);
+            setTranslate(currentX, currentY, terminalWindow);
         }
     }
 
@@ -661,5 +791,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setTranslate(xPos, yPos, el) {
         el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+    }
+
+    // Dosya yöneticisi ve çöp kutusu ikonları için event listener'lar
+    document.querySelector('[data-app="filemanager"]').addEventListener('click', () => {
+        const fileManager = new FileManager(windowManager);
+        fileManager.open();
+    });
+
+    document.querySelector('[data-app="trash"]').addEventListener('click', () => {
+        const trashManager = new TrashManager(windowManager);
+        trashManager.open();
+    });
+
+    // Uygulama başlangıcında FileSystem'i kontrol et ve başlat
+    const isNewFileSystem = checkAndInitializeFileSystem();
+    if (isNewFileSystem) {
+        console.log('Yeni dosya sistemi oluşturuldu ve başlatıldı.');
     }
 });

@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function contact(params, targetContent, addOutput) {
+export function contact(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const contactText = `
 <span class="highlight">${i18n.t('contact.title')}</span>
 
@@ -10,5 +10,5 @@ export function contact(params, targetContent, addOutput) {
 
 <span class="command">social</span> ${i18n.t('contact.socialCommand')}
 `;
-    addOutput(contactText, targetContent);
+    utils.addOutput(contactText, targetContent);
 }

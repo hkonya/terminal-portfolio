@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function skills(params, targetContent, addOutput) {
+export function skills(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const skillsText = `
 <span class="highlight">${i18n.t('skills.title')}</span>
 
@@ -26,5 +26,5 @@ export function skills(params, targetContent, addOutput) {
 
 ${i18n.t('skills.footer')}
 `;
-    addOutput(skillsText, targetContent);
+    utils.addOutput(skillsText, targetContent);
 }

@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n.js';
 
-export function experience(params, targetContent, addOutput) {
+export function experience(params, targetContent, commandHistory, currentPath, setPath, utils) {
     const experienceText = `
 <span class="highlight">${i18n.t('experience.title')}</span>
 
@@ -12,5 +12,5 @@ export function experience(params, targetContent, addOutput) {
 
 <span class="command">${i18n.t('experience.netix_intern.title')}</span> | ${i18n.t('projects.may')} 2016 - ${i18n.t('projects.june')} 2016
 `;
-    addOutput(experienceText, targetContent);
+    utils.addOutput(experienceText, targetContent);
 }
